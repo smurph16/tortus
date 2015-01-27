@@ -3,13 +3,13 @@ from accessing_groups import *
 
 class GroupsTest(unittest.TestCase):
 	"""Tests for groups.py"""
-
+	def setUp(self):
+		#self.
 	def test_create_group_page(self):
-
+		self.
 
 def create_group_page(group_name, members):
     pagename = group_name
-    if user == 1:
     	text = "#acl AdminGroup:read,write,delete,revert,admin " + pagename + ":read,write All: read\n #Category:User\n"
     	text += members
     	print PageEditor(request, pagename).saveText(text, 0)

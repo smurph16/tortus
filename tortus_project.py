@@ -183,7 +183,9 @@ class TortusProject(object): # inherit from Page?
 		tortus_page_obj = TortusPage()
 		if self.create_project_files():
 			self.groups = {}
-			tortus_page_obj.add_from_file(os.path.join(template_path, 'project_central_page_template'), self.args, self.moin_name, 'organisation')
+			p = get_permissions()
+			permissions = p.get('instructor_read_only')
+			tortus_page_obj.add_from_file(os.path.join(template_path, 'project_central_page_template'), self.moin_name, 'organisation', permissions)
 		else:
 			pass
 			#self.groups = json_stuff
@@ -289,7 +291,7 @@ projects = TortusProjectCollection()
 # 		
 #How does this operate?
 
-# 1. You create a new project...pass it a dictionary with particular keywords permisions, groups etc.
+# 1. You create a new project...pass it a dictionary with particular keywords permissions, groups etc.
 # 2. You want access to an existing project, you pass it a dictionary with keyword name and retrieve everything else
 # 3. You make edits to a project attribute
 # 		e.g. remove a group

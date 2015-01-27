@@ -2,7 +2,7 @@
 Command - Create Page
 ------------------------------------------------------------
 
-This command allows users to create groups from the command line"""
+This command allows users to create pages from the command line"""
 
 from tortus_command import TortusScript
 from tortus_page import TortusPage
@@ -21,7 +21,7 @@ class Tortus(TortusScript):
 		self.parser = argparse.ArgumentParser()
 		self.request = ScriptContext()
 		self.parser.add_argument("--page_name", help="the name of the page being created")
-		self.parser.add_argument("-all", "--show_to_all", help="flag if all users should have this page as a quicklink", action="store_true")
+		self.parser.add_argument("--show_to_all", help="flag if all users should have this page as a quicklink", action="store_true")
 		self.parser.add_argument("--group_names", help="the name of the groups to create a quicklink for", action="store", nargs="*")
 		self.parser.add_argument("--user_names", help="the name of the users to create a central page for")
 		self.parser.add_argument(dest="filenames", help="the names of the files to create pages from", nargs='*')
@@ -29,8 +29,8 @@ class Tortus(TortusScript):
 		self.parser.add_argument("--permissions", help="specify the permissions for the page. ", choices=['instructor_read_only', 'read_only', 
 		'user_write_only', 'group_write_only'])
 		self.parser.add_argument("--url", help="the url of the page you would like to push to users")
-		self.parser.add_argument("--project", help="the project to push ")
-		self.parser.add_argument("--central_page", help="create a homepage for the user or group", action="store_true")
+		self.parser.add_argument("--project", help="the project to push the page to")
+		self.parser.add_argument("--central_page", help="flag to create a page for each user or group", action="store_true")
 		# self.parser.add_argument("--")
 		self.parser.add_argument("--path", help = "creates the page as a subpage. Subpage path is taken as space separated list", nargs="*")
 		self.args = self.parser.parse_args()
@@ -38,18 +38,39 @@ class Tortus(TortusScript):
 
 	def central_page(self, project, page_name, file_path, homepage=0):
         # Checks for a template page and sets homepage_default_text
-		members = []
+		"""Creates a page from a central page for each user or group
+		@param project: the project the page and users belong to
+		@param page_name: the name of the page that will be added for each user
+		@param file_path: the path to the file or template containing the contents of the page
+		@param homepage: set to 1 if the page will be the homepage for a user"""
+		accounts = []
 		if self.args.user_names:
-			members = [self.args.user_names, ]
-		elif self.args.group_names:
-			members = self.request.groups.get(self.args.group_names, [])
+			accounts = [self.args.user_names, ]
+			self.user_copy(accounts, project, page_name, file_path)
 		elif self.args.show_to_all:
 			uids = user.getUserList(self.request)
-			members = [user.User(self.request, uid).name for uid in uids]
-		if not members:
-			print "No user selected!"
+			accounts = [user.User(self.request, uid).name for uid in uids]
+			self.user_copy(accounts, project, page_name, file_path)
+		elif self.args.group_names:
+			for group in self.args.group_names:
+				group_name = "{0}Project/{1}Group".format(project.name, group)
+				temp_group = self.request.groups.get(group_name, [])
+				if temp_group.member_groups:
+					accounts.extend(temp_group.member_groups)
+				if temp_group.members:
+					accounts.append(temp_group)
+			self.group_copy(accounts, project, page_name, file_path)
+		if not accounts:
+			print "No accounts selected for copy of page!"
 			return
 	    # loop through members for creating homepages
+	
+	def user_copy(self, members, project, page_name, file_path):
+		"""Creates a copy of a page for each user in members
+		@param members: a list of members a copy should be made for
+		@param project: the project the page should be created for
+		@param page_name: the name of the page to be copied
+		@param file_path: the path to the page to be copied"""
 		for name in members:
 			uid = user.getUserId(self.request, name)
 			account = user.User(self.request, uid)
@@ -59,56 +80,53 @@ class Tortus(TortusScript):
 					text = Page(self.request, self.args.template).get_raw_body()
 				else:
 					text = '''#acl %(user_name)s:read,write,delete,revert Default'''  #This is off
-        # Check for Group definition	
-				self.write_homepage(account, project.name, text)
+				self.page.write_homepage(account, project.name, text)
 			else:
-				page_name = self.get_page_path(account, project.name, page_name)
-				self.add_page_for_user(account, page_name, file_path)
+				p = get_permissions(user_name=account.name)
+				permissions = p.get('user_write_only')
+				pg_name = self.page.get_page_path(account.name, project.name, page_name)
+				self.page.add_from_file(file_path, pg_name, 'user', permissions)
 
+	def group_copy(self, accounts, project, page_name, file_path):
+		"""Creates a copy of a page for each group in accounts 
+		@param accounts: a list of groups a copy should be created for
+		@param project: the project the page should be created for
+		@param page_name: the name of the page to be copied
+		@param file_path: the path of the page to be copied"""
+		for group in accounts:
+			pg_name = "{0}HomePage/{1}".format(group.name, page_name)
+			p = get_permissions(group_name=group.name)
+			permissions = p.get('group_write_only')
+			self.page.add_from_file(file_path, pg_name, 'user', permissions)
 
-	def write_homepage(self, account, project_name, homepage_text):
-	# writes the homepage
-		homepage = "{0}/{1}".format(project_name, account.name)
-		if account.exists() and not account.disabled and not Page(self.request, homepage).exists(): #account exists?
-			userhomepage = PageEditor(self.request, homepage)
-			try:
-				userhomepage.saveText(homepage_text, 0)
-				print "Central page created for %s." % account.name
-			except userhomepage.Unchanged:
-				print "You did not change the page content, not saved!"
-			except userhomepage.NoAdmin:
-				print "You don't have enough rights to create the %s page" % account.name
-		else:
-			print "Page for %s already exists or account is disabled or user does not exist." % account.name
-
-	def add_page_for_user(self, account, name, file_path):
-		if account.exists() and not account.disabled and not Page(self.request, name).exists():
-			# try:
-			self.page.add_from_file(file_path, self.args, name, 'user') #different here
-			print "Central page created for %s." % account.name
-			# except IOError
-			# 	print "You did not changed the page content, not saved!"
-		else:
-			print "Page for %s already exists or account is disabled or user does not exist" % account.name
-
-	def get_page_path(self, account, project_name, name):
-		#This is where I would get some page path
-		page_path = "{0}/{1}/{2}".format(project_name, account.name, name)
-		return page_path
+	def process_user_ids(self, page_name, args): #This might be the one to move...back
+		"""Add a link in the users task-bar to a specific page
+		@param page_name: the name of the page to add a quick link to
+		@args: command line arguments"""
+		user_ids = None
+		if args.show_to_all:
+			user_ids = getUserList(self.request)
+		elif args.group_names:
+			user_ids = retrieve_members(args.group_names) #Retrieve members is in groups
+		if user_ids is not None:
+			for uid in user_ids:
+				add_quick_link(uid, page_name)
 
 	def run(self):
 		name = None
-	    # One of create, modify or delete must be specified
 		if not (self.args.filenames or self.args.template or self.args.url):
 			self.parser.error ("Please specify a file, url or a template to create a page from")
 			return
 		if not (self.args.permissions):
-			 default_permissions = raw_input("The permissions for this file will be set to read_only. Press Y to continue or any other key to halt program\n")
+			 default_permissions = raw_input("The permissions for this file will be set to default values. Press Y to continue or any other key to halt program\n")
 			 if default_permissions == 'Y':
-			 	self.args.permissions = 'read_only'
+			 	p = get_permissions()
+			 	permissions = p.get('read_only')
 			 else:
 			 	print "Permissions can be set using the --permissions flag. See --help for more information"
 			 	return
+		else:
+			permissions = self.args.permissions
 		#This is messy. Tidy it up
 		if (self.args.filenames and self.args.template) or (self.args.filenames and self.args.url) or (self.args.url and self.args.template):
 			self.parser.error("You can only specify a filename, a template or a url")
@@ -135,8 +153,7 @@ class Tortus(TortusScript):
 			if mk_prj == 'Y':
 				project = projects.tortus_project(name =project_name, groups={}, args=self.args)
 			else:
-				return #Exit if project shouldn't be created
-		#Get the project again/
+				return
 		else:
 			project = projects.tortus_project(name=project_name, groups={}, args=self.args) #This is a retrieval step...initialises it with existing data
 		group_obj = TortusGroup(project.name)
@@ -146,7 +163,7 @@ class Tortus(TortusScript):
 			if self.args.central_page:
 				self.central_page(project, name, file_path)
 			else:
-				self.page.add_from_file(file_path, self.args, name, 'user')		
+				self.page.add_from_file(file_path, name, 'user', permissions)		
 		elif self.args.filenames:
 			for fname in self.args.filenames:
 				if name is None:
@@ -155,19 +172,9 @@ class Tortus(TortusScript):
 				if self.args.central_page:
 					self.central_page(project, name, file_path)
 				else:
-					self.page.add_from_file(file_path, self.args, name, 'user')
-		#homepage option?
+					self.page.add_from_file(file_path, name, 'user', permissions)
 		elif self.args.url:
-			self.page.process_url_page(self.args)
-
-	# def get_page_path():
-
-
-		
-	#elif args.template
-# HomePage Template
-#parser.add_argument("--template", help="if a page should be created for each group with the project template....specify template?")
-		
+			self.page.process_url_page(self.args)	
 
 if __name__ == "__main__":
 	command = Tortus()
