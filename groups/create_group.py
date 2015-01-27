@@ -20,7 +20,7 @@ class isRoot(object):
 	def __getattr__(self, name):
 		return lambda *args,**kwargs: True
 
-class AccessingGroups(TortusScript):
+class Groups(TortusScript):
 
 	format_string = '\n----------------------------------------\n'
 	#To Do
@@ -182,108 +182,13 @@ class AccessingGroups(TortusScript):
 		except OSError as e:
 			print 'A revision file was not made. Error: %s' % e
 
-		#Remove the group from all_groups
 
-	#def remove_multiple_groups():
-		#Ideal if I can choose only to write to one file
-
-	def remove_all_groups(self):
-		"""Remove all the groups designated as ..... group"""
-		global all_groups_path
-		check = raw_input("Are you sure you want to remove all user groups from this wiki? This action cannot be undone...easily: Type Y to continue with deletion ")
-		if check == "Y":
-			# Remove pages
-			# for all groups with user tag, remove the page
-			groups = self.request.groups
-			for group in groups:
-				group_page_path = os.path.join("/usr/local/share/moin/eduwiki/data/pages", group)
-				if os.path.exists(group_page_path):
-					pagename = group
-					text = Page(self.request, pagename).get_raw_body()
-					if text.split('\n', 1)[0] == "##category: User":
-						self.remove_group(group)
-						text = self.remove_from_all_groups_file(group)
-						self.write_all_groups_file(text)
-						#classification = f.readline()
-						#if classification = "#user":
-							#remove_group(group)
-				
-			# Create copy
-			# create_copy()
-			# Clear all_groups file
-			#open(all_groups_path, 'w').close()
-		else:
-			print "Deletion aborted"
-
-	def modify_groups(self, modified_groups):
-		"""Modify the groups from a modified all_groups_file
-		@param modified_groups the text file containing the alterations"""
-		with open(all_groups_path, 'r+') as all_groups:
-			with open (modified_groups, 'r') as new_groups:
-				old_groups = all_groups.read()
-				revised_groups = new_groups.read()
-				f_pattern = re.compile('-{40}\n.+\n-{40}[^----------]*', re.M)
-				match = re.findall(f_pattern, revised_groups)
-				if match:
-					for group in match:
-						previous_line = ""
-						members = set()
-						revised_members_set = set()
-						revised_members_text = ""
-						for line in group.split('\n'):
-							if previous_line.startswith("-------------------"):
-								name = line
-								previous_line = "done"
-							if previous_line != "done":
-								previous_line = line
-							if line.startswith(" *"):
-								revised_members_text += line + "\n"
-								line = re.sub(r" \*\s?", "", line)
-								revised_members_set.add(line)
-								#revised_members.add(line.split(" *"))
-								#revised_members += "\n"
-						if Page(self.request, name).exists():
-							text = Page(self.request, name).get_raw_body()
-							for line in text.split('\n'):
-								if line.startswith(" *"):
-									members.add(re.sub(r" \*\s?", "", line))
-							print members
-							if not (revised_members_set-members or members-revised_members_set):
-								continue
-							for member in (revised_members_set - members):
-								print "Adding member {0} to group {1}".format(member, name)
-							for member in (members - revised_members_set):
-								print "Removing member {0} from group {1}".format(member, name)
-							g_pattern = re.compile('^ \*.+\n', re.M)
-							match_obj = re.findall(g_pattern, text)
-							print len(match_obj	)
-							text = re.sub(g_pattern, "", text, count = len(match_obj)-1)
-							text = re.sub(g_pattern, revised_members_text, text, count=1)
-							print PageEditor(self.request, name).saveText(text, 0)
-							#print "members: " + members 
-						else:
-							self.create_group_page(name, revised_members_text)
-
-						#need to update all groups file
-								
-						#create_group_page(name, members)
-						#write_to_group_file(name, members)
-
-	#Create groups ---> default text file? command line...is it necessary ---> naming...default add to user number, otherwise provide names in file ----> project pages as well?
-	#Remove groups ---> must flag with text-file, command line arguments or all  ???Is this a user group? default command line arguments
 
 	#Specify options first on the command line
 	def __init__(self):
 		import argparse
-		self.request = ScriptContext() 
 		self.parser = argparse.ArgumentParser()
-		self.parser.add_argument("--create_group", help="signify that you want to create a group", action="store_true")
 		self.parser.add_argument("--project_name", help="the name of the project groups are being created for")
-		self.parser.add_argument("-all", "--clear_all_groups", help="delete all user groups", action="store_true")
-		self.parser.add_argument("--remove_group", help="delete groups specified. Default is given from command line", action="store_true")
-		#parser.add_argument("-u", "--user", help="specify that a user group is being manipulated", action="store_true")
-		#parser.add_argument("-a", "--admin", help="specify that an admin group is being manipulated", action="store_true")
-		self.parser.add_argument("--modify_group", help="change the construction of the groups", action="store_true")
 		self.parser.add_argument("--group_name", help="the name of the group to create, delete or modify", action="store", nargs="*")
 		self.parser.add_argument("--member_names", help="members of the group to be added, deleted or modified", nargs='*', action="store")
 		self.parser.add_argument(dest="filenames", help="the names of the files storing the groups to be modified", nargs='*')
@@ -294,23 +199,7 @@ class AccessingGroups(TortusScript):
 
 
 	def command_line_processing(self):
-		#print "Create_group: %d" % args.create_group
-		#print "Remove_all_groups: %d" % args.clear_all_groups
-		#print "Remove_group: %d" % args.remove_group
-		#print "Modify_group: %d" % args.modify_group
-		#print "Group_Name: %s" % args.group_name
-		#print "Prefix: %s" % args.prefix
-		#print args.filenames
-		#print args.member_names
 
-	    # One of create, modify or delete must be specified
-		if not (self.args.create_group or self.args.remove_group or self.args.modify_group):
-			self.parser.error ("No action requested. Please specify 	--create_group or --remove_group or --modify_group")
-			return
-	    # Create argument	
-		if self.args.create_group:
-			#self.create_group_args(self.args)
-	    	# Group to be created on command line or with text file
 			if not (self.args.member_names or self.args.filenames):
 				self.parser.error("Must specify member names in command line or path to file containing names")
 				return	
@@ -339,64 +228,8 @@ class AccessingGroups(TortusScript):
 			if self.args.member_names:
 				self.create_single_group(self.args.member_names, name)
 
-	    # Remove argument
-		elif self.args.remove_group:
-	    	#One of user or admin must be specified
-			if self.args.clear_all_groups:
-				delete_all = 1
-				self.remove_all_groups()
-				print "Deleting all groups"
-	    	#Group(s) to be deleted must be specified on command line or in text-file
-			elif not (self.args.group_name or self.args.filenames or self.args.prefix):
-				self.parser.error("Must specify group name in command line or path to file containing group_names to be deleted")
-				return
-			delete = 1
-			if self.args.group_name:
-				for gname in self.args.group_name:
-					self.remove_group_process(gname)
-			elif self.args.prefix:
-				self.remove_group_of_groups(self.args.prefix)
-			else:
-				for fname in self.args.filenames:
-					with open(fname, 'r') as f:
-						for gname in f:
-							gname = gname.rstrip('\n')
-							remove_group_process(gname)
-			self.create_copy()
-	    # Modify argument
-		elif self.args.modify_group:
-			if not self.args.filenames:
-				print "Must specify a path to a file containing modified groups"
-			modify = 1
-			for fname in self.args.filenames:
-				modify_groups(fname)
-
-
-	def remove_group_process(self, gname):
-		"""Removes a group and edits the all_groups_file
-		@param gname: the group to be deleted"""
-		self.remove_group(gname)
-		print "Deleting group {0}".format(gname)
-		text = self.remove_from_all_groups_file(gname)
-		self.write_all_groups_file(text)
-
 	def run(self): 
-		self.request.user.may = isRoot()
-		# if "--remove_multiple_groups" in sys.argv: remove_multiple = 1
-		# if remove_multiple == 1:
-		# 	remove_multiple_groups()
-		# if "--user_group" in sys.argv: user_page = 1
-		#user_group = 1 #Edit this configuration
 		self.command_line_processing()
-
-	# def alter_environment(env):
-	#  	global u, admin, instructor
-	#  	if env.user:
-	#  		u = 1
-	#  	if env.admin:
-	#  		admin = 1
-	# 	#if env.instructor:
-	# 		#instructor = 1
 
 	def group_count(self, pattern):
 		"""The number of groups with a particular name pattern
@@ -410,21 +243,6 @@ class AccessingGroups(TortusScript):
 				if int(match_obj.group(1)) > count:
 					count = int(match_obj.group(1))
 		return count
-
-	def remove_group_of_groups(self, name):
-		"""Remove a subset of groups specified by a name pattern or prefix
-		@param name: the name of the subset of groups"""
-		groups = self.request.groups
-		gname = '{0}Group'.format(name)
-		if gname in groups:
-			main_group = groups.get(gname)
-			print main_group.name
-			for member_group in main_group.member_groups:
-				print member_group
-				if member_group in groups:
-					print "in"
-					remove_group_process(member_group)
-			selfself.remove_group_process(gname)
 
 	def retrieve_members (group_names):
 		"""Get the user ids of the members of a list of groups
@@ -474,12 +292,4 @@ class AccessingGroups(TortusScript):
 		return formatted_members
 
 if __name__ == "__main__":
-	command = AccessingGroups()
-	command.run()
-
-
-	# Read the file
-	# Store the 
-
-
-
+	run()

@@ -275,7 +275,7 @@ class AccessingGroups(TortusScript):
 	#Specify options first on the command line
 	def __init__(self):
 		import argparse
-		self.request = ScriptContext() 
+		self.request = ScriptContext() 	
 		self.parser = argparse.ArgumentParser()
 		self.parser.add_argument("--create_group", help="signify that you want to create a group", action="store_true")
 		self.parser.add_argument("--project_name", help="the name of the project groups are being created for")
@@ -309,35 +309,38 @@ class AccessingGroups(TortusScript):
 			return
 	    # Create argument	
 		if self.args.create_group:
-			#self.create_group_args(self.args)
-	    	# Group to be created on command line or with text file
-			if not (self.args.member_names or self.args.filenames):
-				self.parser.error("Must specify member names in command line or path to file containing names")
-				return	
-	    	# Store name if default not wanted
-			if self.args.group_name and len(self.args.group_name) > 1:
-				print "You can only specify one group name for creating a group"
-				return
-			#This is messy...clean it up	
-			elif self.args.group_name:
-				name = self.args.group_name[0]
-				print "Creating group %s" % name
-			elif not (self.args.group_name or self.args.prefix):
-				name = "default"
-			elif self.args.prefix:
-				name = self.args.prefix
-				print name
-			#create = 1
-			groups_created = ""	
-			for fname in self.args.filenames:
-				groups_created += self.process_group_file(fname, name)
-				print "processed a_file"
-			if self.args.filenames and self.args.categorise:
-				self.create_group_of_groups(self.args.categorise, groups_created)
-			elif self.args.filenames and self.args.prefix:
-				self.create_group_of_groups(self.args.prefix, groups_created)
-			if self.args.member_names:
-				self.create_single_group(self.args.member_names, name)
+			from groups.create_group import Groups
+			create = Groups()
+			create.run()
+			# #self.create_group_args(self.args)
+	  #   	# Group to be created on command line or with text file
+			# if not (self.args.member_names or self.args.filenames):
+			# 	self.parser.error("Must specify member names in command line or path to file containing names")
+			# 	return	
+	  #   	# Store name if default not wanted
+			# if self.args.group_name and len(self.args.group_name) > 1:
+			# 	print "You can only specify one group name for creating a group"
+			# 	return
+			# #This is messy...clean it up	
+			# elif self.args.group_name:
+			# 	name = self.args.group_name[0]
+			# 	print "Creating group %s" % name
+			# elif not (self.args.group_name or self.args.prefix):
+			# 	name = "default"
+			# elif self.args.prefix:
+			# 	name = self.args.prefix
+			# 	print name
+			# #create = 1
+			# groups_created = ""	
+			# for fname in self.args.filenames:
+			# 	groups_created += self.process_group_file(fname, name)
+			# 	print "processed a_file"
+			# if self.args.filenames and self.args.categorise:
+			# 	self.create_group_of_groups(self.args.categorise, groups_created)
+			# elif self.args.filenames and self.args.prefix:
+			# 	self.create_group_of_groups(self.args.prefix, groups_created)
+			# if self.args.member_names:
+			# 	self.create_single_group(self.args.member_names, name)
 
 	    # Remove argument
 		elif self.args.remove_group:
@@ -382,21 +385,7 @@ class AccessingGroups(TortusScript):
 
 	def run(self): 
 		self.request.user.may = isRoot()
-		# if "--remove_multiple_groups" in sys.argv: remove_multiple = 1
-		# if remove_multiple == 1:
-		# 	remove_multiple_groups()
-		# if "--user_group" in sys.argv: user_page = 1
-		#user_group = 1 #Edit this configuration
 		self.command_line_processing()
-
-	# def alter_environment(env):
-	#  	global u, admin, instructor
-	#  	if env.user:
-	#  		u = 1
-	#  	if env.admin:
-	#  		admin = 1
-	# 	#if env.instructor:
-	# 		#instructor = 1
 
 	def group_count(self, pattern):
 		"""The number of groups with a particular name pattern
@@ -476,7 +465,6 @@ class AccessingGroups(TortusScript):
 if __name__ == "__main__":
 	command = AccessingGroups()
 	command.run()
-
 
 	# Read the file
 	# Store the 
