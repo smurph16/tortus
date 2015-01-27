@@ -1,8 +1,13 @@
 """
-    MoinMoin - Extension 
+    MoinMoin - Acts as the entry point for all tortus commands. 
+    Controls general options for all commands. 
+
+
+    TODO: Integrate script with individual tortus commands
 
     @date: 2014-01-12
     @author: Sarah Murphy
+    
     MoinMoin:ThomasWaldmann """
  
 
@@ -13,7 +18,9 @@ from MoinMoin.script import MoinScript, Script
 from MoinMoin.util import pysupport
 
 flag_quiet = 0
+
 class ArgumentScript(Script):
+    """Initialises a generic parser to route commands to various sub-commands"""
     def __init__(self, cmd, usage, args=None, def_values=None):
         #print "argv:", argv, "def_values:", repr(def_values)
 
@@ -70,7 +77,7 @@ class ArgumentScript(Script):
                 self.logRuntime()
 
 class TortusScript(ArgumentScript):
-    """ Tortus Scripting Class """
+    """ Tortus Scripting Class. Creates generic arguments applicable to all tortus sub-commands """
 
     def __init__(self, argv=None, def_values=None): 
         ArgumentScript.__init__(self, "tortus", "[general options] command subcommand [specific options]", argv, def_values)
@@ -118,13 +125,12 @@ class TortusScript(ArgumentScript):
             self.parser.print_help()
             fatal("""You must specify a command module and name:
 
-tortus ... group create ...
-tortus ... group remove ...
-tortus ... group modify  ...
-tortus ... permissions change ...
-
+tortus ... create ...
+tortus ... remove ...
+tortus ... modify  ...
+tortus ... permissions ...
 tortus ... page add
-tortus ... page fill in more here...blah 
+tortus ... page fill in more commands here
 
 General options:
 

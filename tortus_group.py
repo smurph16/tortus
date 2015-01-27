@@ -9,9 +9,9 @@ from nat_sort import natsorted
 import re
 
 class TortusGroup():
+	"""Tortus Group Class"""
 
 	def __init__(self, project):
-		#Are their variables?
 		self.project = project #What project does it belong to...check it exists
 		self.request = ScriptContext()
 
@@ -202,6 +202,8 @@ class TortusGroup():
 	# 	return sorted (1, key = alphanum_key)  
 
 	def repr_groups(self, groups):
+		"""Create representation of group name and members to display to user
+		@param groups: a dictionary containing group_names as keys and group_members in a list as values"""
 		format_string = '----------------------------------------'
 		newline = "\n"
 		text = ""
@@ -210,7 +212,12 @@ class TortusGroup():
 		return text
 
 	def create_groups(self, groups, name, project, projects): #Groups is a dictionary with key name and value members as a list
-		"""creates groups """
+		"""Creates group for a specific project
+		@param groups: a data structure containing the groups to be added. Dictionary if names are already specified, list of lists of members
+		otherwise
+		@param name: name pattern for group(s) if name is not set
+		@param project: the project to add the groups
+		@param projects: collection of all projects"""
 		group_dict = {}
 		created_groups = {}
 		failed_groups = []
@@ -240,6 +247,9 @@ class TortusGroup():
 		#Write to json file
 
 	def create_print_actions(self, created_groups, failed_groups):
+		"""Print created and failed groups to the command line
+		@param: created_groups: dictionary of created groups
+		@param: failed_groups: list of groups that were not created"""
 		for group in failed_groups:
 			print "Failed to create group {}".format(group)
 		text = "Created the following groups: "
@@ -248,6 +258,10 @@ class TortusGroup():
 		print text
 
 	def delete_groups(self, groups, project, projects):
+		"""Delete groups from a specific project
+		@param groups: a list of groups to be deleted
+		@param project: the project to delete the groups from
+		@param projects: the collection of projects"""
 		deleted_groups = []
 		failed_groups = []
 		for group in groups:
@@ -266,7 +280,9 @@ class TortusGroup():
 		projects.update() #Remove access to projects //Could run in command script
 		self.delete_print_actions(deleted_groups, failed_groups)
 
-	def remove_group(self, name):
+	def remove_group(self, name): #This should be hidden?
+		"""Remove a single group page from the MoinMoin wiki
+		@param name: the MoinMoin page name of the group to be deleted"""
 		#Find the group files....could do this with PageEditor(request, pagename).deletePage()
 		# """Remove a single group from the pages directory
 		# @param name: the name of the group to be removed"""
@@ -281,13 +297,19 @@ class TortusGroup():
 		pg_obj.delete_page(name)
 
 	def delete_print_actions(self, deleted_groups, failed_groups):
+		"""Print deleted and failed groups to the command line
+		@param: deleted_groups: list of deleted groups
+		@param: failed_groups: list of groups that were not deleted"""
 		for group in failed_groups:
 			print "Failed to remove group {0}".format(group)
 		for group in deleted_groups:
 			print "Deleted group with name {0}".format(group)
 
-	def modify_page(self, page_name, members):
+	def modify_page(self, page_name, members): #Hidden as well
 		#Should I be just removing a group and adding a group or should I modify the text???
+		"""Modify a page to containg different users. This changes the groups in the MoinMoin backend
+		@param: page_name: the MoinMoin page_name of the page to be modified
+		@param: members: the new members to be stored on the page"""
 		page = Page(self.request, page_name)
 		if page.exists():
 			acl = page.getACL(self.request)
@@ -302,6 +324,10 @@ class TortusGroup():
 				return 1
 	
 	def modify_groups(self, groups, project, projects):
+		"""Modify groups from a specific project
+		@param groups: a dictionary of groups to be modified. Keys contain group names. Values contain list of group members
+		@param project: the project to modify the groups from
+		@param projects: the collection of projects"""
 		modified_groups = {}
 		failed_groups = []
 		for group, members in groups.iteritems():
@@ -318,15 +344,22 @@ class TortusGroup():
 		self.modify_print_actions(modified_groups, failed_groups)
 
 	def modify_print_actions(self, modified_groups, failed_groups):
+		"""Print modified and failed groups to the command line
+		@param: modified_groups: dictionary of modified groups
+		@param: failed_groups: list of groups that were not modified"""
 		for group in failed_groups:
 			print "Failed to remove group {0}".format(group)
 		for group, members in modified_groups.iteritems():
 			print "Modified group {0} with members {1}".format(group, members)
 
 	def get_moin_name(self, name):
+		"""Maps the user's(change this) page name to the MoinMoin page name for page editing
+		@param name: the user's name for the group"""
 		return "{0}/{1}".format(self.project, name)
 
 	def get_user_group_name(self, moin_name):
+		"""Maps the MoinMoin page name to the user's name for the group
+		@param moin_name: the MoinMoin page name"""
 		pattern = re.compile(".+Project/([a-zA-Z0-9]+)Group")
 		match = pattern.match(moin_name)
 		return match.group(1)

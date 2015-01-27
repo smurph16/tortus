@@ -1,3 +1,9 @@
+#This is where the configuration directory is stored
+config_dir = '/usr/local/share/moin/eduwiki'
+
+#This is the url of the wiki
+wiki_url = 'http://localhost/eduwiki'
+
 #This is where the master group file is stored
 all_groups_path = '/usr/local/share/moin/tortus/all_groups.txt'
 
@@ -8,7 +14,22 @@ data_folder = '/usr/local/share/moin/eduwiki/data'
 page_path = '/usr/local/share/moin/tortus/pages'
 
 #This is where templates for easy page creation are stored. 
-template_path = '/usr/local/share/moin/adminconfig/pages/templates'
+template_path = '/usr/local/share/moin/tortus/pages/templates'
+
+#This is where the wiki config file is located
+wiki_config = '/usr/local/share/moin/wikiconfig.py'
+
+#This is where the Group regex can be altered. If you change it here you must also change it in wikiconfig.py
+group_regex = u'(?P<all>(?P<key>\\S+)Group)'
+
+#This is where the Group regex can be altered. If you change it here you must also change it in wikiconfig.py
+project_regex = '^\w+Project$'
+
+#This is where project files will be produced.
+project_files = '/usr/local/share/moin/projects'
+
+#This is where the persistent json files are kept
+json_file = "/usr/local/share/moin/persistent/json_project.json"
 
 #This is where default permissions can be changed
 def get_permissions(user_name="",group_name=""):
@@ -23,3 +44,4 @@ def get_permissions(user_name="",group_name=""):
 	'group_write_only':'#acl AdminGroup:read,write,delete,revert,admin EditorGroup:read,write,revert {0}:read,write All:read\n'.format(group_name)
 	}
 	return permissions
+
