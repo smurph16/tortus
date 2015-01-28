@@ -88,6 +88,7 @@ class TortusPage(object): # inherit from Page?
 			print "A page with the name {0} doesn't exist".format(name)
 			return 1
 		PageEditor(self.request, name).deletePage()
+		return 0
 
 	def write_homepage(self, account, project_name, homepage_text):
 	# writes the homepage

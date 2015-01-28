@@ -274,6 +274,8 @@ class TortusGroup():
 				failed_groups.append(group)
 			else:
 				deleted_groups.append(group)
+		print deleted_groups
+		print failed_groups
 		for group in deleted_groups:
 			name = group.decode('utf-8')
 			try:
@@ -298,7 +300,7 @@ class TortusGroup():
 		# else: 
 		# 	return 1 ????implementation choice
 		pg_obj = TortusPage()
-		pg_obj.delete_page(name)
+		return pg_obj.delete_page(name)
 
 	def delete_print_actions(self, deleted_groups, failed_groups):
 		"""Print deleted and failed groups to the command line

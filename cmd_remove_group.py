@@ -78,27 +78,8 @@ class Tortus(TortusScript):
 				else:
 					print "Could not delete any groups."
 					return
-		deleted_groups = []	
-		failed_groups = []
-		for group in groups_to_be_deleted:
-			name = "{0}Project/{1}Group".format(project.name, group)
-			removed = self.remove_group(name)
-			#formatted_members = group_obj.format_members(group)
-			if removed == 1:
-				failed_groups.append(group)
-			else:
-				deleted_groups.append(group)
-		for group in deleted_groups:
-			name = group.decode('utf-8')
-			try:
-				project.groups.pop(name)
-			except KeyError:
-				failed_groups.append(group)
-				deleted_groups.remove(group)
-		project.write_project_group_file()
-		projects.update_groups(project, 'groups')
-		self.print_actions(group_obj, deleted_groups, failed_groups)
-				 #need get groups method
+		group_obj = TortusGroup(project_name)
+		group_obj.delete_groups(groups_to_be_deleted, project, projects)
 
 	def run(self): 
 		self.command_line_processing()
