@@ -41,8 +41,7 @@ class Tortus(TortusScript):
 		self.parser.add_argument("--group_name", help="the name of the group to create, delete or modify", action="store")
 		self.parser.add_argument("--member_names", help="members of the group to be added, deleted or modified", nargs='*', action="store")
 		self.parser.add_argument(dest="filenames", help="the names of the files storing the groups to be modified", nargs='*')
-		self.parser.add_argument("--createProjectPage", help="if a page should be created for each group....specify template?")
-		self.parser.add_argument("--categorise", help="if a group should be created containing the new groups", action="store")
+		self.parser.add_argument("--createProjectPage", help="if a page should be created for each group....specify template?") 
 		self.parser.add_argument("--permissions", default="instructor_read_only", help="specify the permissions for the group pages. Default: instructor_read_only")
 		self.parser.add_argument("--group_prefix", help="a prefix for naming groups") #Do I need this?
 		self.args = self.parser.parse_args()

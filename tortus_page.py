@@ -17,22 +17,22 @@ class TortusPage(object): # inherit from Page?
 	def __init__(self):
 		self.request = ScriptContext()
 
-	def add_from_file(self, file_path, name, ctx, perm=""):
+	def add_from_file(self, file_path, project, name, ctx, perm=""):
 		"""Add a new page to the moinmoin wiki from a file
 		@param file_path: the file to create the page from
 		@param name: the name of the page to be created
 		@param ctx: the type of page to be added. One of 'user' or 'organisation'
 		@param perm: permissions for the page""" #Do I need this?
+		name = "{0}Project/{1}".format(project.name, name)
 		if Page(self.request, name).exists(): #should use isUnderlayPage/isDataPage
 			print "A page with the name {0} already exists".format(name)
 			return 1 #Need name here but doesn't give correct permissions. Could pass them in here?
 		try:
-			print file_path
 			with open (file_path) as f:
 				text = "{0}\n".format(perm)
-				print text
 				text += f.read()
-				print PageEditor(self.request, name).saveText(text, 0)
+				text += "\n<<Navigation(children)>>"
+				PageEditor(self.request, name).saveText(text, 0)
 				print "A page was created with the name {0}".format(name)
 				return 0
 		except IOError:
@@ -87,7 +87,7 @@ class TortusPage(object): # inherit from Page?
 		if not Page(self.request, name).exists(): #should use isUnderlayPage/isDataPage
 			print "A page with the name {0} doesn't exist".format(name)
 			return 1
-		PageEditor(self.request, name).deletePage
+		PageEditor(self.request, name).deletePage()
 
 	def write_homepage(self, account, project_name, homepage_text):
 	# writes the homepage
@@ -106,7 +106,7 @@ class TortusPage(object): # inherit from Page?
 
 	def get_page_path(self, account_name, project_name, page_name):
 		#This is where I would get some page path
-		page_path = "{0}/{1}/{2}".format(project_name, account_name, page_name)
+		page_path = "{0}/{1}".format(account_name, page_name)
 		return page_path
 
 

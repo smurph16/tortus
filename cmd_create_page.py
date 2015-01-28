@@ -23,7 +23,7 @@ class Tortus(TortusScript):
 		self.parser.add_argument("--page_name", help="the name of the page being created")
 		self.parser.add_argument("--show_to_all", help="flag if all users should have this page as a quicklink", action="store_true")
 		self.parser.add_argument("--group_names", help="the name of the groups to create a quicklink for", action="store", nargs="*")
-		self.parser.add_argument("--user_names", help="the name of the users to create a central page for")
+		self.parser.add_argument("--user_names", help="the name of the users to create a central page for", nargs="*")
 		self.parser.add_argument(dest="filenames", help="the names of the files to create pages from", nargs='*')
 		self.parser.add_argument("--template", help="if a page should be created for each group with the project template....specify template?") #efault="homework_template"
 		self.parser.add_argument("--permissions", help="specify the permissions for the page. ", choices=['instructor_read_only', 'read_only', 
@@ -31,7 +31,6 @@ class Tortus(TortusScript):
 		self.parser.add_argument("--url", help="the url of the page you would like to push to users")
 		self.parser.add_argument("--project", help="the project to push the page to")
 		self.parser.add_argument("--central_page", help="flag to create a page for each user or group", action="store_true")
-		# self.parser.add_argument("--")
 		self.parser.add_argument("--path", help = "creates the page as a subpage. Subpage path is taken as space separated list", nargs="*")
 		self.args = self.parser.parse_args()
 		self.page = TortusPage()
@@ -45,12 +44,12 @@ class Tortus(TortusScript):
 		@param homepage: set to 1 if the page will be the homepage for a user"""
 		accounts = []
 		if self.args.user_names:
-			accounts = [self.args.user_names, ]
-			self.user_copy(accounts, project, page_name, file_path)
+			accounts = self.args.user_names
+			self.user_copy(accounts, project, page_name, file_path, homepage)
 		elif self.args.show_to_all:
 			uids = user.getUserList(self.request)
 			accounts = [user.User(self.request, uid).name for uid in uids]
-			self.user_copy(accounts, project, page_name, file_path)
+			self.user_copy(accounts, project, page_name, file_path, homepage)
 		elif self.args.group_names:
 			for group in self.args.group_names:
 				group_name = "{0}Project/{1}Group".format(project.name, group)
@@ -65,12 +64,13 @@ class Tortus(TortusScript):
 			return
 	    # loop through members for creating homepages
 	
-	def user_copy(self, members, project, page_name, file_path):
+	def user_copy(self, members, project, page_name, file_path, homepage=0):
 		"""Creates a copy of a page for each user in members
 		@param members: a list of members a copy should be made for
 		@param project: the project the page should be created for
 		@param page_name: the name of the page to be copied
 		@param file_path: the path to the page to be copied"""
+		print members
 		for name in members:
 			uid = user.getUserId(self.request, name)
 			account = user.User(self.request, uid)
@@ -85,7 +85,7 @@ class Tortus(TortusScript):
 				p = get_permissions(user_name=account.name)
 				permissions = p.get('user_write_only')
 				pg_name = self.page.get_page_path(account.name, project.name, page_name)
-				self.page.add_from_file(file_path, pg_name, 'user', permissions)
+				self.page.add_from_file(file_path, project, pg_name, 'user', permissions)
 
 	def group_copy(self, accounts, project, page_name, file_path):
 		"""Creates a copy of a page for each group in accounts 
@@ -94,10 +94,11 @@ class Tortus(TortusScript):
 		@param page_name: the name of the page to be copied
 		@param file_path: the path of the page to be copied"""
 		for group in accounts:
-			pg_name = "{0}HomePage/{1}".format(group.name, page_name)
+			group_name = group.name.split('/')[1]
+			pg_name = "{0}HomePage/{1}".format(group_name, page_name)
 			p = get_permissions(group_name=group.name)
 			permissions = p.get('group_write_only')
-			self.page.add_from_file(file_path, pg_name, 'user', permissions)
+			self.page.add_from_file(file_path, project, pg_name, 'user', permissions)
 
 	def process_user_ids(self, page_name, args): #This might be the one to move...back
 		"""Add a link in the users task-bar to a specific page
@@ -163,7 +164,7 @@ class Tortus(TortusScript):
 			if self.args.central_page:
 				self.central_page(project, name, file_path)
 			else:
-				self.page.add_from_file(file_path, name, 'user', permissions)		
+				self.page.add_from_file(file_path, project, name, 'user', permissions)		
 		elif self.args.filenames:
 			for fname in self.args.filenames:
 				if name is None:
@@ -172,7 +173,7 @@ class Tortus(TortusScript):
 				if self.args.central_page:
 					self.central_page(project, name, file_path)
 				else:
-					self.page.add_from_file(file_path, name, 'user', permissions)
+					self.page.add_from_file(file_path, project, name, 'user', permissions)
 		elif self.args.url:
 			self.page.process_url_page(self.args)	
 

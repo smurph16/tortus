@@ -6,6 +6,7 @@ from MoinMoin.Page import Page
 from MoinMoin.PageEditor import PageEditor
 from default import *
 from nat_sort import natsorted
+from tortus_page import TortusPage
 import re
 
 class TortusGroup():
@@ -79,9 +80,14 @@ class TortusGroup():
 		if name =="default":
 			count = self.group_count(re.compile('([0-9]+)Group'.format))
 			return '{0}Group'.format(count+1)
-		else:
+		elif name == self.project:
 			count = self.group_count(re.compile('{0}Project\/([0-9]+)Group'.format(self.project)))
 			return '{0}Project/{1}Group'.format(self.project, count+1) #{0}Project
+		else:
+			if re.search('(\d+)$', name) is not None:
+				return '{0}Project/{1}Group'.format(self.project, name)
+			count = self.group_count(re.compile('{0}Project\/{1}([0-9]+)Group'.format(self.project, name)))
+			return '{0}Project/{1}{2}Group'.format(self.project, name, count+1)
 
 	def create_group_of_groups(self, name, members):
 		'''Creates a group page which stores a set of groups for easy handling. A name must be specified for the group.
@@ -121,7 +127,8 @@ class TortusGroup():
 						groups.append(members)
 						members = []
 		except IOError:
-			print "The file could not be found"
+			print "The file at {0} could not be found ".format(path)
+			return
 		return groups
 
 	def process_delete_group_file(self, path):
@@ -134,6 +141,7 @@ class TortusGroup():
 					groups.append(line.strip())
 		except IOError:
 			print "The file could not be found"
+			return
 		return groups
 
 	def process_modified_group_file(self, path):
@@ -195,12 +203,6 @@ class TortusGroup():
 							writing = True
 		#Needs to change so that all groups file gets overwritten
 
-	# def _natural_sort(l):
-	# 	"""returns the natural sorting order of a list"""
-	# 	convert = lamba text: int(text) if text.isdigit() else text.lower()
-	# 	alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-	# 	return sorted (1, key = alphanum_key)  
-
 	def repr_groups(self, groups):
 		"""Create representation of group name and members to display to user
 		@param groups: a dictionary containing group_names as keys and group_members in a list as values"""
@@ -232,7 +234,6 @@ class TortusGroup():
 			if created_page == 1 and name == "":
 				failed_groups.append(group)
 			elif created_page == 1:
-				print self.get_user_group_name(moin_group_name)
 				failed_groups.append(self.get_user_group_name(moin_group_name))
 			elif created_page == 0 and name == "":
 				created_groups[group] = groups[group]
@@ -252,10 +253,11 @@ class TortusGroup():
 		@param: failed_groups: list of groups that were not created"""
 		for group in failed_groups:
 			print "Failed to create group {}".format(group)
-		text = "Created the following groups: "
+		if created_groups:
+			text = "Created the following groups: "
 		#print len(created_groups)
-		text += self.repr_groups(created_groups)
-		print text
+			text += self.repr_groups(created_groups)
+			print text
 
 	def delete_groups(self, groups, project, projects):
 		"""Delete groups from a specific project
@@ -265,19 +267,22 @@ class TortusGroup():
 		deleted_groups = []
 		failed_groups = []
 		for group in groups:
-			name = "{0}/{1}".format(project.name, group) #May need to map here as well to a separate function
-			#Map to MoinMoin name
-			moin_name = self.get_moin_name(name)
-			# Remove the group from the MoinMoin wiki
-			removed = self.remove_group(moin_name)
+			name = "{0}Project/{1}Group".format(project.name, group)
+			removed = self.remove_group(name)
+			#formatted_members = group_obj.format_members(group)
 			if removed == 1:
-				failed_groups.append(name)
+				failed_groups.append(group)
 			else:
-				deleted_groups.append(name)
+				deleted_groups.append(group)
 		for group in deleted_groups:
 			name = group.decode('utf-8')
-			project.groups.pop(name)
-		projects.update() #Remove access to projects //Could run in command script
+			try:
+				project.groups.pop(name)
+			except KeyError:
+				failed_groups.append(group)
+				deleted_groups.remove(group)
+		project.write_project_group_file()
+		projects.update_groups(project, 'groups')
 		self.delete_print_actions(deleted_groups, failed_groups)
 
 	def remove_group(self, name): #This should be hidden?
@@ -292,7 +297,6 @@ class TortusGroup():
 		# 	return 0
 		# else: 
 		# 	return 1 ????implementation choice
-		print name
 		pg_obj = TortusPage()
 		pg_obj.delete_page(name)
 
@@ -313,7 +317,6 @@ class TortusGroup():
 		page = Page(self.request, page_name)
 		if page.exists():
 			acl = page.getACL(self.request)
-			print acl
 			text = "{0}{1}\n[[{2}]]".format(acl, members, self.project)
 			try:
 				page_ed = PageEditor(self.request, page_name)
@@ -362,7 +365,8 @@ class TortusGroup():
 		@param moin_name: the MoinMoin page name"""
 		pattern = re.compile(".+Project/([a-zA-Z0-9]+)Group")
 		match = pattern.match(moin_name)
-		return match.group(1)
+		if match:
+			return match.group(1)
 
 
 # my_group = TortusGroup('pro')

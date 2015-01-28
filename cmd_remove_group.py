@@ -39,13 +39,12 @@ class Tortus(TortusScript):
 		self.request = ScriptContext()
 		self.parser = argparse.ArgumentParser()
 		self.parser.add_argument("--project", help="the name of the project groups are being created for")
-		self.parser.add_argument("--group_names", help="the name of the group to delete", action="store", nargs='*')
+		self.parser.add_argument("--group_names", help="the name of the groups to delete", action="store", nargs='*')
 		self.parser.add_argument(dest="filenames", help="the names of the files storing the groups to be deleted", nargs='*')
 		self.parser.add_argument("--categorise", help="if a group should be created containing the new groups", action="store") #Must edit if exists
 		self.parser.add_argument("--permissions", default="instructor_read_only", help="specify the permissions for the group pages. Default: instructor_read_only")
 		self.parser.add_argument("--group_prefix", help="delete all groups with this prefix") #Do I need this?
 		self.args = self.parser.parse_args()
-
 
 	def command_line_processing(self):
 		if not (self.args.group_names or self.args.filenames):
@@ -69,6 +68,9 @@ class Tortus(TortusScript):
 		if self.args.group_names:
 			for grp in self.args.group_names:
 				groups_to_be_deleted.append(grp) #This isn't the name
+		elif self.args.group_prefix:
+			pass
+			#Not yet implemented
 		elif self.args.filenames:
 			for fname in self.args.filenames:
 				if group_obj.process_delete_group_file(fname) is not None:
@@ -88,10 +90,11 @@ class Tortus(TortusScript):
 				deleted_groups.append(group)
 		for group in deleted_groups:
 			name = group.decode('utf-8')
-			print project.groups
-			project.groups.pop(name)
-			print "project groups"
-			print project.groups
+			try:
+				project.groups.pop(name)
+			except KeyError:
+				failed_groups.append(group)
+				deleted_groups.remove(group)
 		project.write_project_group_file()
 		projects.update_groups(project, 'groups')
 		self.print_actions(group_obj, deleted_groups, failed_groups)
@@ -113,7 +116,8 @@ class Tortus(TortusScript):
 		pg_obj = TortusPage()
 		pg = Page(self.request, name)
 		if pg.exists():
-			pg_obj.delete_page(name)
+			pg_obj.delete_page(name) # This doesn't work
+			print name
 			return 0
 		else:
 			return 1
@@ -122,6 +126,7 @@ class Tortus(TortusScript):
 		#self.create_all_groups_version(name)
 
 	def print_actions(self, group_obj, deleted_groups, failed_groups):
+		""""""
 		for group in failed_groups:
 			print "Failed to remove group {}".format(group)
 		for group in deleted_groups:
@@ -195,7 +200,7 @@ if __name__ == "__main__":
 	def create_copy(self):
 		"""Create a copy of the all_groups file for back-up"""
 		global all_groups_path
-		print "create copy"
+		print "Create copy"
 		string = time.ctime(os.path.getmtime(all_groups_path))
 		modification = '_' + string.replace(' ', '-')
 		(file_name, file_extension) = os.path.splitext(all_groups_path)
@@ -233,42 +238,8 @@ if __name__ == "__main__":
 						self.remove_group(group)
 						text = self.remove_from_all_groups_file(group)
 						self.write_all_groups_file(text)
-						#classification = f.readline()
-						#if classification = "#user":
-							#remove_group(group)
-				
-			# Create copy
-			# create_copy()
-			# Clear all_groups file
-			#open(all_groups_path, 'w').close()
 		else:
 			print "Deletion aborted"
-
-
-
-	# def command_line_processing(self):
-
-	# 	if self.args.clear_all_groups:
-	# 		delete_all = 1
-	# 		self.remove_all_groups()
-	# 		print "Deleting all groups"
- #    	#Group(s) to be deleted must be specified on command line or in text-file
-	# 	elif not (self.args.group_name or self.args.filenames or self.args.prefix):
-	# 		self.parser.error("Must specify group name in command line or path to file containing group_names to be deleted")
-	# 		return
-	# 	delete = 1
-	# 	if self.args.group_name:
-	# 		for gname in self.args.group_name:
-	# 			self.remove_group_process(gname)
-	# 	elif self.args.prefix:
-	# 		self.remove_group_of_groups(self.args.prefix)
-	# 	else:
-	# 		for fname in self.args.filenames:
-	# 			with open(fname, 'r') as f:
-	# 				for gname in f:
-	# 					gname = gname.rstrip('\n')
-	# 					remove_group_process(gname)
-	# 	self.create_copy() #This is in the incorrect spot...move it
 
 	def remove_group_process(self, gname):
 		"""Removes a group and edits the all_groups_file

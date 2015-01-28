@@ -54,31 +54,11 @@ class TortusProjectCollection(dict):
 				elif exists == 0: #The project already exists
 					json_data = json.load(f)
 					json_project = json_data["projects"][project.name]
-					#This is the problem 17:34 Wed #Now has the dictionary containing the parameters
-					#Update things
 			else:
 				json_data = self._json_create_project_structure(project)
 				json_data["projects"].update(self.json_default(project))
 				json.dump(json_data, f)
-			#Create the dictionary here
-
-#     encoded_object = '''{
-#     "projects": {
-#         "project_1": {
-#             "name": "magic",
-#             "args": "blahs"
-#         },
-#         "project_2": {
-#             "name": "super",
-#             "args": "broken"
-#         },
-#         "project_3": {
-#             "name": "special",
-#             "args": "bingo"
-#         }
-#     }
-# }'''
-					
+			
 	# def _json_dump(self, json_obj, project):
 	# 	project_dict = {project.name: {}}
 	# 	json_obj["projects"].update(self.json_default(project))
@@ -87,20 +67,6 @@ class TortusProjectCollection(dict):
 	def _json_create_project_structure(self, project):
 		json_data = {"projects":{}} 
 		return json_data
-
-    	# with open('json_file', 'r') as f:
-    	# 	json.dump({"projects"}, f)
-    	# with open('json_file', 'w') as f:
-    	# 	entry = project
-    	# 	json_data
-    	# return ....
-
-    	# data = json.load(json_data)
-    	# if not data[project.name]:
-
-	def update(project):
-		self[project.name].write_project_group_file()
-		self.update_groups(project, 'groups')
 	
 	def project_exists(self, project_name):
 		"""returns 0 if project exists, 1 if projects exists and 2 if the file doesn't contain the projects dict
@@ -178,7 +144,6 @@ class TortusProject(object): # inherit from Page?
 		for key in kwargs: 
 		    setattr(self, key, kwargs[key])
 		self.moin_name = self.get_moin_name(self.name)
-		print self.moin_name
 		#self.pages = Tree() #implement file structure tree here
 		tortus_page_obj = TortusPage()
 		if self.create_project_files():
@@ -207,7 +172,7 @@ class TortusProject(object): # inherit from Page?
 	def create_project_files(self):
 		project_path = os.path.join(project_files, self.name)
 		if not os.path.exists(project_path):
-			os.mkdir(project_path)
+			os.makedirs(project_path)
 			os.mkdir(os.path.join(project_path, 'groups'))
 			os.mkdir(os.path.join(project_path, 'groups', 'revisions'))
 			os.mkdir(os.path.join(project_path, 'pages'))
@@ -240,7 +205,7 @@ class TortusProject(object): # inherit from Page?
 		except OSError as e:
 			print 'A revision file was not made. Error: %s' % e
 		except IOError as e:
-			print "There is an IOError here"
+			print ("Error: %s" % e.strerror)
 
 	def get_moin_name(self, name):
 		pattern = re.compile(project_regex)
@@ -252,49 +217,4 @@ class TortusProject(object): # inherit from Page?
 
 	def get_name(self, name):
 		return self.name
-
-
-projects = TortusProjectCollection()
-#projects.tortus_project('magic', 'blah' )
-#projects.tortus_project('boohoo', 'yay')
-#projects.tortus_project('magic', 'boo')
-# magic = projects.tortus_project(name='magicProject')problem
-# magic = projects.tortus_project(name="magicProject", args="pink")
-#How to update
-# obj = projects.tortus_project(name='blueProject', args='hit')
-# me = projects.tortus_project(name="bluebird", args="bingo")
-# new_me = projects.tortus_project(name="bluebird", args="blue")
-# print new_me.args + "new_me"
-# new_me = projects.tortus_project(name="bluebird")
-# #print new_me.args
-# test = projects.tortus_project(name="bluebird", args="boo")
-# print test.args
-
-# for project in projects:
-# 	magic = projects[project]
-# 	print project, projects[project]
-# # 	print type(project)
-# # 	print type(projects[project])
-# # print projects.exists('project1')
-
-# with open (os.path.join(project_files, self.name ), 'w') as f:
-	
-
-#new_object = json.loads(json_str)
-#print new_object
-
-# class Encoder(json.JSONEncode):
-# 	def encode(self, tortus_project):
-# 		"""Takes an TortusProject object and returns a JSON
-# 		string
-# 		@param tortus_project: the object to dump in JSON"""
-# 		
-#How does this operate?
-
-# 1. You create a new project...pass it a dictionary with particular keywords permissions, groups etc.
-# 2. You want access to an existing project, you pass it a dictionary with keyword name and retrieve everything else
-# 3. You make edits to a project attribute
-# 		e.g. remove a group
-# 4. The program calls an update function which parses the current project __dict__ as a json object
-# 5. The project is written to
 

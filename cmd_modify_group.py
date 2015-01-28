@@ -69,14 +69,12 @@ class Tortus(TortusScript):
 		self.request = ScriptContext()
 		self.parser = argparse.ArgumentParser()
 		self.parser.add_argument("--project", help="the name of the project groups are being created for")
-		self.parser.add_argument(dest="filename", help="the name or path of the files storing the groups to be modified") #Must edit if exists
+		self.parser.add_argument("--get_file", help="create a copy of the project groups and store in the current working directory ", action='store_true')
+		self.parser.add_argument("--filename", help="the name or path of the files storing the groups to be modified") #Must edit if exists
 		self.parser.add_argument("--permissions", default="instructor_read_only", help="specify the permissions for the group pages. Default: instructor_read_only")
 		self.args = self.parser.parse_args()
 
 	def command_line_processing(self):
-		if not self.args.filename:
-			self.parser.error("Must specify  path to file containing groups to be modified")
-			return
 		if self.args.project:
 			project_name = self.args.project
 		else:
@@ -91,6 +89,23 @@ class Tortus(TortusScript):
 		#Get the project again/
 		project = projects.tortus_project(name=project_name, groups={}, args=self.args) #This is a retrieval step...initialises it with existing data
 		group_obj = TortusGroup(project.name)
+		if self.args.get_file:
+			groups_path = os.path.join(project_files, project_name, 'groups', 'groups')
+			retain_file = os.path.join(os.getcwd(), 'groups')
+			print retain_file
+			try:
+				shutil.copy(groups_path, retain_file)
+			except shutil.Error as e:
+				print 'A groups file was not made. Error %s' % e
+			except OSError as e:
+				print 'A groups file was not made. Error: %s' % e
+			except IOError as e:
+				print ("Error: The groups file could not be found: %s" % e.strerror)
+			finally:
+				return
+		if not self.args.filename:
+			self.parser.error("Must specify path to file containing groups to be modified")
+			return
 		new_groups = group_obj.process_modified_group_file(self.args.filename)
 		d = DictDiffer(project.groups, new_groups)
 		groups_to_be_deleted = d.removed() #list
