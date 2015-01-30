@@ -9,7 +9,9 @@ from tortus_page import TortusPage
 from MoinMoin.web.contexts import ScriptContext
 from default import *
 from tortus_project import TortusProjectCollection, TortusProject
+from helper import ArgHelper
 import argparse, os
+import sys
 
 class Tortus(TortusScript):
 
@@ -17,25 +19,29 @@ class Tortus(TortusScript):
 
 		self.parser = argparse.ArgumentParser()
 		self.request = ScriptContext()
-		self.parser.add_argument("--name", help="the name of the project being created") 
-		self.parser.add_argument("--permissions", help="the permissions for the central page")
+		self.parser.add_argument(
+			"--name", 
+			help="the name of the project being created") 
+		self.parser.add_argument(
+			"--permissions", 
+			help="the permissions for the central page")
 		self.args = self.parser.parse_args()
-		#self.page = TortusPage()
+		self.opts = vars(self.args)
+		self.page = TortusPage()
 
 	def run(self):	
-		name = None
+		arghelper = ArgHelper(self.opts, self.parser)
 		if not (self.args.name):
 			self.parser.error ("Please specify a name for the project")
-			return
-		name = "Project{}".format(self.args.name)
-		if not (self.args.permissions):
-			 	self.args.permissions = 'instructor_read_only'
+			sys.exit()
+		project_name = self.args.name
+		permissions = arghelper.get_permissions()
 		projects = TortusProjectCollection()
-		if projects.exists(name):
+		if projects.project_exists(project_name) == 0:
 			print "A project by that name already exists"
-			return
+			sys.exit()
 		else:
-			projects.tortus_project(name, self.args)
+			project = projects.tortus_project(name = project_name, groups={}, args=self.args)
 
 if __name__ == "__main__":
 	command = Tortus()

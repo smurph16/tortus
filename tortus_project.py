@@ -25,7 +25,6 @@ class TortusProjectCollection(dict):
 			with open (json_file, 'r') as f:
 				if self.project_exists(name) == 0:
 					json_data = json.load(f)
-					#record new part
 					project = TortusProject(json_data["projects"][name])
 				else:
 					project = TortusProject( *arg, **kw )
@@ -58,7 +57,7 @@ class TortusProjectCollection(dict):
 				json_data = self._json_create_project_structure(project)
 				json_data["projects"].update(self.json_default(project))
 				json.dump(json_data, f)
-			
+				
 	# def _json_dump(self, json_obj, project):
 	# 	project_dict = {project.name: {}}
 	# 	json_obj["projects"].update(self.json_default(project))
@@ -69,8 +68,13 @@ class TortusProjectCollection(dict):
 		return json_data
 	
 	def project_exists(self, project_name):
-		"""returns 0 if project exists, 1 if projects exists and 2 if the file doesn't contain the projects dict
-		@param project_name: the name of the project"""
+		"""Determines whether a project exists
+		@param project_name: the name of the project
+		@returns int:
+			0: project_exists
+			1: projects dictionary exists
+			2: no projects exist
+			3: JSON object could not be found"""
 		#Change to try, except
 		if os.path.getsize(json_file) == 0:
 			return 2
@@ -91,6 +95,8 @@ class TortusProjectCollection(dict):
 		return exists
 
 	def get_moin_name(self, name):
+		"""Gets the moin_name of the project
+		@param name: the moin name of a project"""
 		pattern = re.compile(project_regex)
 		if pattern.match(name):
 			map_name = name
@@ -150,7 +156,8 @@ class TortusProject(object): # inherit from Page?
 			self.groups = {}
 			p = get_permissions()
 			permissions = p.get('instructor_read_only')
-			tortus_page_obj.add_from_file(os.path.join(template_path, 'project_central_page_template'), self.moin_name, 'organisation', permissions)
+			tortus_page_obj.add_from_file(
+				os.path.join(template_path, 'project_central_page_template'), self, "", 'organisation', permissions)
 		else:
 			pass
 			#self.groups = json_stuff
@@ -183,13 +190,12 @@ class TortusProject(object): # inherit from Page?
 		"""Generate a file containing all the groups in the project"""
 		tortus_group_obj = TortusGroup(self.name)
 		text = tortus_group_obj.repr_groups(self.groups)
-		group_path = os.path.join(project_files, self.name, 'groups')
+		group_path = os.path.join(project_files, self.name, 'groups', 'groups')
 		if not os.path.exists(group_path):
 			os.makedirs(group_path)
-			os.mkdir(os.path.join(group_path, 'revisions'))
 		else:
 			self.create_copy(group_path)
-		with open (os.path.join(group_path, 'groups'), 'w') as project_groups:
+		with open (os.path.join(group_path), 'w') as project_groups:
 			project_groups.write(text)
 
 	def create_copy(self, path):
@@ -197,15 +203,15 @@ class TortusProject(object): # inherit from Page?
 		string = time.ctime(os.path.getmtime(path))
 		modification = '_' + string.replace(' ', '-')
 		file_name = "{0}{1}".format('groups', modification)
-		retain_file = os.path.join(path, 'revisions', file_name)
+		retain_file = os.path.join(os.path.dirname(path), 'revisions', file_name)
 		try:
-			shutil.copy(os.path.join(path, 'groups'), retain_file)
+			shutil.copy(path, retain_file)
 		except shutil.Error as e:
 			print 'A revision file was not made. Error %s' % e
 		except OSError as e:
 			print 'A revision file was not made. Error: %s' % e
 		except IOError as e:
-			print ("Error: %s" % e.strerror)
+			print ("Error: a revision file was not made. %s" % e.strerror)
 
 	def get_moin_name(self, name):
 		pattern = re.compile(project_regex)

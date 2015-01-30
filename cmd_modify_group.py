@@ -38,6 +38,7 @@ from tortus_command import TortusScript
 from tortus_project import TortusProjectCollection
 from tortus_page import TortusPage
 from tortus_group import TortusGroup
+from helper import ArgHelper
 
 class DictDiffer(object):
 	"""Calculate the differences between dictionaries
@@ -68,41 +69,28 @@ class Tortus(TortusScript):
 		import argparse
 		self.request = ScriptContext()
 		self.parser = argparse.ArgumentParser()
-		self.parser.add_argument("--project", help="the name of the project groups are being created for")
-		self.parser.add_argument("--get_file", help="create a copy of the project groups and store in the current working directory ", action='store_true')
-		self.parser.add_argument("--filename", help="the name or path of the files storing the groups to be modified") #Must edit if exists
-		self.parser.add_argument("--permissions", default="instructor_read_only", help="specify the permissions for the group pages. Default: instructor_read_only")
+		self.parser.add_argument(
+			"--project", 
+			help="the name of the project groups are being created for")
+		self.parser.add_argument(
+			"--get_file", 
+			help="create a copy of the project groups and store in the current working directory ", 
+			action='store_true')
+		self.parser.add_argument(
+			"--filename", 
+			help="the name or path of the files storing the groups to be modified") #Must edit if exists
+		self.parser.add_argument(
+			"--permissions", 
+			default="instructor_read_only", 
+			help="specify the permissions for the group pages. Default: instructor_read_only")
 		self.args = self.parser.parse_args()
+		self.opts = vars(self.parser.parse_args())
 
 	def command_line_processing(self):
-		if self.args.project:
-			project_name = self.args.project
-		else:
-			default_project = raw_input("These groups will be modified from the project DefaultProject. Please Y to proceed or any other key to cancel: ")
-			if not default_project == "Y":
-				return
-			project_name = "default"
-		projects = TortusProjectCollection()
-		if not (projects.project_exists(project_name) == 0): #Check for project files?
-			print "This project does not exist yet. Groups cannot be modified."
-			return #Exit if project shouldn't be created
-		#Get the project again/
-		project = projects.tortus_project(name=project_name, groups={}, args=self.args) #This is a retrieval step...initialises it with existing data
+		arghelper = ArgHelper(self.opts, self.parser)
+		project, projects = arghelper.get_project()
+		arghelper.get_group_copy(project.name)
 		group_obj = TortusGroup(project.name)
-		if self.args.get_file:
-			groups_path = os.path.join(project_files, project_name, 'groups', 'groups')
-			retain_file = os.path.join(os.getcwd(), 'groups')
-			print retain_file
-			try:
-				shutil.copy(groups_path, retain_file)
-			except shutil.Error as e:
-				print 'A groups file was not made. Error %s' % e
-			except OSError as e:
-				print 'A groups file was not made. Error: %s' % e
-			except IOError as e:
-				print ("Error: The groups file could not be found: %s" % e.strerror)
-			finally:
-				return
 		if not self.args.filename:
 			self.parser.error("Must specify path to file containing groups to be modified")
 			return
@@ -134,99 +122,6 @@ class Tortus(TortusScript):
 
 	def run(self): 
 		self.command_line_processing()
-
-	def process_path(self, path):
-		"""Return a path to a record of the created groups_created
-		@param path: the text file containing the groups"""
-		(file_name, file_extension) = os.path.splitext(path)
-		file_name = "{0}_grouped{1}".format(file_name, file_extension)
-		grouped_file = os.path.join(os.path.dirname(os.path.abspath(path)), file_name)
-		return grouped_file
-
-	def write_homepage(self, account, homepage_text):
-	# writes the homepage
-		if account.exists() and not account.disabled and not Page(self.request, account.name).exists():
-			userhomepage = PageEditor(self.request, account.name)
-			try:
-				userhomepage.saveText(homepage_text, 0)
-				print "Central page created for %s." % account.name
-			except userhomepage.Unchanged:
-				print "You did not change the page content, not saved!"
-			except userhomepage.NoAdmin:
-				print "You don't have enough rights to create the %s page" % account.name
-		else:
-			print "Page for %s already exists or account is disabled or user does not exist." % account.name
-
-	def remove_group_of_groups(self, name):
-		"""Remove a subset of groups specified by a name pattern or prefix
-		@param name: the name of the subset of groups"""
-		groups = self.request.groups
-		gname = '{0}Group'.format(name)
-		if gname in groups:
-			main_group = groups.get(gname)
-			print main_group.name
-			for member_group in main_group.member_groups:
-				print member_group
-				if member_group in groups:
-					print "in"
-					remove_group_process(member_group)
-			selfself.remove_group_process(gname)
-
-	def format_members(self, members):
-		formatted_members = [" * {0}".format(member) for member in members]
-		return formatted_members
-	# Read the file
-	# Store the  
-
-
-	def modify_groups(self, modified_groups):
-		"""Modify the groups from a modified all_groups_file
-		@param modified_groups the text file containing the alterations"""
-		with open(all_groups_path, 'r+') as all_groups:
-			with open (modified_groups, 'r') as new_groups:
-				old_groups = all_groups.read()
-				revised_groups = new_groups.read()
-				f_pattern = re.compile('-{40}\n.+\n-{40}[^----------]*', re.M)
-				match = re.findall(f_pattern, revised_groups)
-				if match:
-					for group in match:
-						previous_line = ""
-						members = set()
-						revised_members_set = set()
-						revised_members_text = ""
-						for line in group.split('\n'):
-							if previous_line.startswith("-------------------"):
-								name = line
-								previous_line = "done"
-							if previous_line != "done":
-								previous_line = line
-							if line.startswith(" *"):
-								revised_members_text += line + "\n"
-								line = re.sub(r" \*\s?", "", line)
-								revised_members_set.add(line)
-								#revised_members.add(line.split(" *"))
-								#revised_members += "\n"
-						if Page(self.request, name).exists():
-							text = Page(self.request, name).get_raw_body()
-							for line in text.split('\n'):
-								if line.startswith(" *"):
-									members.add(re.sub(r" \*\s?", "", line))
-							print members
-							if not (revised_members_set-members or members-revised_members_set):
-								continue
-							for member in (revised_members_set - members):
-								print "Adding member {0} to group {1}".format(member, name)
-							for member in (members - revised_members_set):
-								print "Removing member {0} from group {1}".format(member, name)
-							g_pattern = re.compile('^ \*.+\n', re.M)
-							match_obj = re.findall(g_pattern, text)
-							print len(match_obj	)
-							text = re.sub(g_pattern, "", text, count = len(match_obj)-1)
-							text = re.sub(g_pattern, revised_members_text, text, count=1)
-							print PageEditor(self.request, name).saveText(text, 0)
-							#print "members: " + members 
-						else:
-							self.create_group_page(name, revised_members_text)
 
 if __name__ == "__main__":
 	command = Tortus()

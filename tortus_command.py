@@ -63,6 +63,7 @@ class ArgumentScript(Script):
         try:
             try:
                 self.options = self.parser.parse_args()
+                print self.options
                 self.args = self.parser.parse_args()
                 flag_quiet = self.options.quiet
                 # ToDo check if we need to initialize request (self.init_request())

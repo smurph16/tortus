@@ -78,7 +78,7 @@ class TortusGroup():
 		"""Determine the next count for a group subset
 		@param name: the group pattern to be counted"""
 		if name =="default":
-			count = self.group_count(re.compile('([0-9]+)Group'.format))
+			count = self.group_count(re.compile('^([0-9]+)Group'))	
 			return '{0}Group'.format(count+1)
 		elif name == self.project:
 			count = self.group_count(re.compile('{0}Project\/([0-9]+)Group'.format(self.project)))
@@ -170,20 +170,6 @@ class TortusGroup():
 			print "The file could not be found"
 		return groups
 
-
-		# 				name = self.get_group_name(group_name)
-		# 				group_created = self.create_group_page(name, text)
-		# 				if group_created == 0:
-		# 					groups_created += " * [[{0}]]\n".format(name)
-		# 					string_to_write= '{0}{1}{0}'.format(self.format_string, name)
-		# 					fout.write('{0}{1}'.format(string_to_write, text))
-		# 					all_groups.write('{0}{1}'.format(string_to_write, text))
-		# 				text = ""
-		# all_groups.close()
-		# return groups_created
-
-	# if no file paths are provided, prompt for one
-
 	def create_all_groups_version(self, name):
 		"""Create a new version of the all_groups file after removed group
 		@param name: the name of the removed_group""" #Needed when verification of modified file is implemented
@@ -239,13 +225,11 @@ class TortusGroup():
 				created_groups[group] = groups[group]
 			else:
 				created_groups[self.get_user_group_name(moin_group_name)] = group
-		#project = projects.tortus_project(# This is due to changing the name to Boo Project...need to add a method
 		for group in created_groups:
 			project.groups.update(created_groups)
 		project.write_project_group_file()
 		projects.update_groups(project, 'groups') #Why doesn't this work?
 		self.create_print_actions(created_groups, failed_groups)
-		#Write to json file
 
 	def create_print_actions(self, created_groups, failed_groups):
 		"""Print created and failed groups to the command line
@@ -274,8 +258,6 @@ class TortusGroup():
 				failed_groups.append(group)
 			else:
 				deleted_groups.append(group)
-		print deleted_groups
-		print failed_groups
 		for group in deleted_groups:
 			name = group.decode('utf-8')
 			try:
@@ -369,6 +351,8 @@ class TortusGroup():
 		match = pattern.match(moin_name)
 		if match:
 			return match.group(1)
+		else:
+			return moin_name
 
 
 # my_group = TortusGroup('pro')

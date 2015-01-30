@@ -12,8 +12,7 @@ import argparse
 
 class TortusPage(object): # inherit from Page?
 	"""Tortus - Page class
-	This class is used for manipulation and creation of user pages. It does
-	something"""
+	This class is used for manipulation and creation of user pages"""
 	def __init__(self):
 		self.request = ScriptContext()
 
@@ -23,7 +22,10 @@ class TortusPage(object): # inherit from Page?
 		@param name: the name of the page to be created
 		@param ctx: the type of page to be added. One of 'user' or 'organisation'
 		@param perm: permissions for the page""" #Do I need this?
-		name = "{0}Project/{1}".format(project.name, name)
+		if name =="":
+			name = "{0}Project".format(project.name)
+		else:
+			name = "{0}Project/{1}".format(project.name, name)
 		if Page(self.request, name).exists(): #should use isUnderlayPage/isDataPage
 			print "A page with the name {0} already exists".format(name)
 			return 1 #Need name here but doesn't give correct permissions. Could pass them in here?
@@ -36,7 +38,8 @@ class TortusPage(object): # inherit from Page?
 				print "A page was created with the name {0}".format(name)
 				return 0
 		except IOError:
-			print "The file {0} could not be found in the location specified. Please check that the file is in the pages folder".format(name)
+			print (
+				"The file {0} could not be found in the location specified. The file should be in the pages folder").format(name)
 			return 1
 
 	def process_url_page(self, args):
@@ -103,11 +106,11 @@ class TortusPage(object): # inherit from Page?
 			except userhomepage.NoAdmin:
 				print "You don't have enough rights to create the %s page" % account.name
 		else:
-			print "Page for %s already exists or account is disabled or user does not exist." % account.name
+			print """Page for %s already exists or account is disabled or
+			user does not exist.""" % account.name
 
 	def get_page_path(self, account_name, project_name, page_name):
 		#This is where I would get some page path
 		page_path = "{0}/{1}".format(account_name, page_name)
 		return page_path
-
 

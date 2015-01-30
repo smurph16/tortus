@@ -45,17 +45,18 @@ class CreateGroups(TortusScript):
 	#Add ability to create project page for each group
 	#Edit group counter so as not to overwrite groups
 
-
 	def create_group_page(self, page_name, members, group=0):
 		"""Create a group page with the given members and group name
 		@param page_name: the name number_of_groups the page_name
 		@param members: members to be added to the group
 		@param group: if 1, categorise as group page (default: 0)"""
 		if group == 1:
-			text = "##category: Group\n{0}{1}".format(get_permissions().get('instructor_read_only'), members)
+			text = "##category: Group\n{0}{1}".format(
+				get_permissions().get('instructor_read_only'), members)
 		else :
-			text = "##category: User\n{0}{1}".format(get_permissions().get('instructor_read_only'),members) #change this
-		#text += members
+			text = "##category: User\n{0}{1}".format(
+			get_permissions().get('instructor_read_only'),members) #change this
+		#text += "<<Navigation(children)>>" May need this?
 		print PageEditor(self.request, page_name).saveText(text, 0)
 		print "Group successfully created with name: {0}".format(page_name)
 		print "Members:\n%s" % members
@@ -149,7 +150,8 @@ class CreateGroups(TortusScript):
 		writing = True
 		count = 0
 		with open(all_groups_path,'r+') as all_groups:
-			with open(os.path.join(os.path.dirname(all_groups_path), 'all_groups_revised.txt'), 'w') as all_groups_revised:	
+			with open(os.path.join(os.path.dirname(
+				all_groups_path), 'all_groups_revised.txt'), 'w') as all_groups_revised:	
 				for num, line in enumerate(all_groups):
 					if writing:
 						if line.strip() == name:
@@ -206,20 +208,28 @@ class CreateGroups(TortusScript):
 		import argparse
 		self.request = ScriptContext()
 		self.parser = argparse.ArgumentParser()
-		self.parser.add_argument("--project_name", help="the name of the project groups are being created for")
-		self.parser.add_argument("--group_name", help="the name of the group to create, delete or modify", action="store", nargs="*")
-		self.parser.add_argument("--member_names", help="members of the group to be added, deleted or modified", nargs='*', action="store")
-		self.parser.add_argument(dest="filenames", help="the names of the files storing the groups to be modified", nargs='*')
-		self.parser.add_argument("--createProjectPage", help="if a page should be created for each group....specify template?")
-		self.parser.add_argument("--categorise", help="if a group should be created containing the new groups", action="store")
-		self.parser.add_argument("--prefix", help="a prefix for naming groups") #should this be handled by categorise?
+		self.parser.add_argument(
+			"--project_name", help="the name of the project groups are being created for")
+		self.parser.add_argument(
+			"--group_name", help="the name of the group to create, delete or modify", action="store", nargs="*")
+		self.parser.add_argument(
+			"--member_names", help="members of the group to be added, deleted or modified", nargs='*', action="store")
+		self.parser.add_argument(
+			dest="filenames", help="the names of the files storing the groups to be modified", nargs='*')
+		self.parser.add_argument(
+			"--createProjectPage", help="if a page should be created for each group....specify template?")
+		self.parser.add_argument(
+			"--categorise", help="if a group should be created containing the new groups", action="store")
+		self.parser.add_argument(
+		"--prefix", help="a prefix for naming groups") #should this be handled by categorise?
 		self.args = self.parser.parse_args()
 
 
 	def command_line_processing(self):
 
 		if not (self.args.member_names or self.args.filenames):
-			self.parser.error("Must specify member names in command line or path to file containing names")
+			self.parser.error(
+				"Must specify member names in command line or path to file containing names")
 			return	
     	# Store name if default not wanted
 		if self.args.group_name and len(self.args.group_name) > 1:
