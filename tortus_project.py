@@ -42,7 +42,7 @@ class TortusProjectCollection(dict):
 				exists = self.project_exists(project.name)
 				f.seek(0)
 				if exists == 2: #The projects object doesn't exist
-					json_data = self._json_create_project_structure(project)
+					json_data = self.json_create_project_structure()
 					json_data["projects"].update(self.json_default(project))
 					json.dump(json_data, f)
 				elif exists == 1: #Just the project itself doesn't exist
@@ -54,7 +54,7 @@ class TortusProjectCollection(dict):
 					json_data = json.load(f)
 					json_project = json_data["projects"][project.name]
 			else:
-				json_data = self._json_create_project_structure(project)
+				json_data = self.json_create_project_structure()
 				json_data["projects"].update(self.json_default(project))
 				json.dump(json_data, f)
 				
@@ -63,7 +63,7 @@ class TortusProjectCollection(dict):
 	# 	json_obj["projects"].update(self.json_default(project))
 	# 	return json_obj
 			
-	def _json_create_project_structure(self, project):
+	def json_create_project_structure(self):
 		json_data = {"projects":{}} 
 		return json_data
 	
@@ -77,7 +77,7 @@ class TortusProjectCollection(dict):
 			3: JSON object could not be found"""
 		#Change to try, except
 		if os.path.getsize(json_file) == 0:
-			return 2
+			return 2 #Why didn't this work?
 		with open (json_file, 'r') as f:
 			exists = 3
 			try:
@@ -91,7 +91,6 @@ class TortusProjectCollection(dict):
 					exists = 2
 			except ValueError:
 					print "A JSON Object could not be found in that file"
-					exists = 3
 		return exists
 
 	def get_moin_name(self, name):
@@ -157,7 +156,10 @@ class TortusProject(object): # inherit from Page?
 			p = get_permissions()
 			permissions = p.get('instructor_read_only')
 			tortus_page_obj.add_from_file(
-				os.path.join(template_path, 'project_central_page_template'), self, "", 'organisation', permissions)
+				os.path.join(template_path, 'instructor_project_homepage'), self, "", 'organisation', permissions)
+			permissions = p.get('read_only')
+			tortus_page_obj.add_from_file(
+				os.path.join(template_path, 'student_project_homepage'), self, "homepage", 'organisation', permissions)
 		else:
 			pass
 			#self.groups = json_stuff
@@ -190,12 +192,12 @@ class TortusProject(object): # inherit from Page?
 		"""Generate a file containing all the groups in the project"""
 		tortus_group_obj = TortusGroup(self.name)
 		text = tortus_group_obj.repr_groups(self.groups)
-		group_path = os.path.join(project_files, self.name, 'groups', 'groups')
+		group_path = os.path.join(project_files, self.name, 'groups')
 		if not os.path.exists(group_path):
 			os.makedirs(group_path)
-		else:
-			self.create_copy(group_path)
-		with open (os.path.join(group_path), 'w') as project_groups:
+		elif os.path.isfile(os.path.join(group_path, 'groups')):
+			self.create_copy(os.path.join(group_path, 'groups'))
+		with open (os.path.join(group_path,'groups'), 'w') as project_groups:
 			project_groups.write(text)
 
 	def create_copy(self, path):
@@ -223,4 +225,10 @@ class TortusProject(object): # inherit from Page?
 
 	def get_name(self, name):
 		return self.name
+
+	def get_members(self):
+		members = set()
+		for group in self.groups:
+			members |= set(self.groups[group])
+		return members
 

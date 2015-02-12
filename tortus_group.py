@@ -342,7 +342,7 @@ class TortusGroup():
 	def get_moin_name(self, name):
 		"""Maps the user's(change this) page name to the MoinMoin page name for page editing
 		@param name: the user's name for the group"""
-		return "{0}/{1}".format(self.project, name)
+		return "{0}Project/{1}Group".format(self.project, name)
 
 	def get_user_group_name(self, moin_name):
 		"""Maps the MoinMoin page name to the user's name for the group

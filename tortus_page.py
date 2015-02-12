@@ -24,6 +24,8 @@ class TortusPage(object): # inherit from Page?
 		@param perm: permissions for the page""" #Do I need this?
 		if name =="":
 			name = "{0}Project".format(project.name)
+		elif name == "homepage":
+			name = "{0}ProjectHomepage".format(project.name)
 		else:
 			name = "{0}Project/{1}".format(project.name, name)
 		if Page(self.request, name).exists(): #should use isUnderlayPage/isDataPage
@@ -33,7 +35,6 @@ class TortusPage(object): # inherit from Page?
 			with open (file_path) as f:
 				text = "{0}\n".format(perm)
 				text += f.read()
-				text += "\n<<Navigation(children)>>"
 				PageEditor(self.request, name).saveText(text, 0)
 				print "A page was created with the name {0}".format(name)
 				return 0

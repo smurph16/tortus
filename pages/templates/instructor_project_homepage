@@ -1,0 +1,14 @@
+##master-page:CategoryTemplate
+##master-date:Unknown-Date
+#format wiki
+#language en
+
+This it the project homepage for instructors. It allows them to see all the pages
+in the wiki. Students should not be able to see this page and all content that 
+they should access should be created from the page @PAGE@Homepage
+
+'''List of pages in this project:'''
+
+<<FullSearch()>>
+----
+CategoryCategory

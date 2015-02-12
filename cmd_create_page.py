@@ -13,6 +13,7 @@ from MoinMoin.PageEditor import PageEditor
 from tortus_project import TortusProjectCollection, TortusGroup
 from default import *
 from helper import ArgHelper
+from search import traverse_pages
 import argparse, os
 
 class Tortus(TortusScript):
@@ -156,6 +157,36 @@ class Tortus(TortusScript):
 			p = get_permissions(group_name=group.name)
 			permissions = p.get('group_write_only')
 			self.page.add_from_file(file_path, project, pg_name, 'user', permissions)
+
+	def process_url(url, level=0):
+		#Move this
+		request = ScriptContext()
+		wiki_data = os.path.basename(os.path.dirname(data_folder))
+		url_parts = urlparse(url)
+		#Page name is a list of the respective pages in the url
+		page_name = (url_parts[2].rpartition(wiki_data + '/')[2]).rsplit('/')
+		file_string = '(2f)' # magic number
+		file_name = file_string.join(page_name)
+		page_link = '/'.join(page_name)
+		print page_name
+		if not Page(request, page_link).exists():
+		    print "The url you have provided is not a page that has already been created"
+		    return
+		else:
+		    traverse_pages(file_name)
+
+	def copy(matches):
+	    #You must know the name of the page at this point
+	    for page in matches:
+	        text = Page(request, pagename).get_raw_body()
+	        user_copy = "##User copy"
+	        group_copy = "##Group copy"
+	        if text.find(user_copy):
+	            user_copy(text)
+	        elif text.find(group_copy):
+	            group_copy(text)
+	        else:
+	            generic_copy(page_name)
 
 	def process_user_ids(self, page_name, args): #This might be the one to move...back
 		"""Add a link in the users task-bar to a specific page

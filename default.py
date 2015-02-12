@@ -31,6 +31,9 @@ project_files = '/usr/local/share/moin/projects'
 #This is where the persistent json files are kept
 json_file = "/usr/local/share/moin/persistent/json_project.json"
 
+#This is the username regex. It controls an individuals access to pages
+username_regex = '[a-z]{4}[0-9]{4}'
+
 #This is where default permissions can be changed
 def get_permissions(user_name="",group_name=""):
 	permissions = {
