@@ -6,8 +6,7 @@ from default import *
 from MoinMoin import user, wikiutil
 from MoinMoin.user import User, getUserList
 from urlparse import urlparse
-import os.path
-import argparse
+import os.path, argparse, re
 
 
 class TortusPage(object): # inherit from Page?
@@ -22,26 +21,34 @@ class TortusPage(object): # inherit from Page?
 		@param name: the name of the page to be created
 		@param ctx: the type of page to be added. One of 'user' or 'organisation'
 		@param perm: permissions for the page""" #Do I need this?
-		if name =="":
-			name = "{0}Project".format(project.name)
-		elif name == "homepage":
-			name = "{0}ProjectHomepage".format(project.name)
-		else:
-			name = "{0}Project/{1}".format(project.name, name)
 		if Page(self.request, name).exists(): #should use isUnderlayPage/isDataPage
 			print "A page with the name {0} already exists".format(name)
 			return 1 #Need name here but doesn't give correct permissions. Could pass them in here?
-		try:
-			with open (file_path) as f:
-				text = "{0}\n".format(perm)
-				text += f.read()
-				PageEditor(self.request, name).saveText(text, 0)
-				print "A page was created with the name {0}".format(name)
-				return 0
-		except IOError:
-			print (
-				"The file {0} could not be found in the location specified. The file should be in the pages folder").format(name)
-			return 1
+		if ctx == 'url':
+			#try: 
+			text  = "{0}\n".format(perm)
+			text += Page(self.request, self.get_moin_name(file_path.rsplit('pages/')[1])).get_raw_body()
+			PageEditor(self.request, name).saveText(text, 0)
+			print "A page was created with the name {0}".format(name)
+			return 0
+			# except IOError:
+			# 	print (
+			# 		"A page with that url could not be found " #Should be more useful!!
+			# 		)
+			# 	return 1
+		else:
+			try:
+				with open (file_path) as f:
+					text = "{0}\n".format(perm)
+					text += f.read()
+					PageEditor(self.request, name).saveText(text, 0)
+					print "A page was created with the name {0}".format(name)
+					return 0
+			except IOError:
+				print (
+					"The file {0} could not be found in the location specified. The file should be in the pages folder".format(file_path)
+					)
+				return 1
 
 	def process_url_page(self, args):
 		"""Create a quick link for a page created in the browser
@@ -81,8 +88,16 @@ class TortusPage(object): # inherit from Page?
 		@param uid: the user id of the user
 		@page_name: the name of the page to add quicklink to"""
 		u = user.User(self.request, uid)
-		if not u.isQuickLinkedTo(page_name):
+		if not u.isQuickLinkedTo(page_name) and Page(self.request, page_name).exists():
 			u.addQuicklink(page_name)
+
+	def remove_quick_link(self, uid, page_name):
+		"""Remove a quick link from a user's task-bar
+		@param uid: the user id of the user
+		@page_name: the name of the page to remove a quicklink from"""
+		u = user.User(self.request, uid)
+		if u.isQuickLinkedTo(page_name):
+			u.removeQuickLink(page_name)
 
 	def delete_page(self, name):
 		#Delete from project file
@@ -114,4 +129,8 @@ class TortusPage(object): # inherit from Page?
 		#This is where I would get some page path
 		page_path = "{0}/{1}".format(account_name, page_name)
 		return page_path
+
+	def get_moin_name(self, name):
+		return re.sub('\(2f\)', '/', name)
+
 

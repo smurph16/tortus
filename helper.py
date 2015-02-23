@@ -16,7 +16,7 @@ class ArgHelper:
              default_permissions = raw_input(
                 "The permissions for this file will be set to default values. Press Y to continue or any other key to halt program: ")
              if default_permissions == 'Y':
-                permissions = 'read_only'
+                permissions = 'default'
              else:
                 print "Permissions can be set using the --permissions flag. See --help for more information"
                 sys.exit()
@@ -51,7 +51,7 @@ class ArgHelper:
             name = self.options['page_name']
         return name
 
-    def get_project(self):
+    def get_project(self, create=0):
         """Retrieve a project to perform an action on. If the project doesn't exist,
         it is created. If a project is not specified the default project can be used
         @return: tuple containing specified project and collection of projects"""
@@ -64,6 +64,9 @@ class ArgHelper:
                 sys.exit() #That didn't work
             project_name = "default"
         projects = TortusProjectCollection()
+        if not (projects.project_exists(project_name) == 0) and create == 0:
+            print "This project does not exist yet."
+            sys.exit()
         if not (projects.project_exists(project_name) == 0): #Make the project if it doesn't exist
             mk_prj = raw_input(
                 "This project does not exist yet. If you would like to create it, press Y to proceed or any other key to cancel: ")
@@ -71,15 +74,15 @@ class ArgHelper:
                 project = projects.tortus_project(
                     name =project_name, groups={}, args=self.options)
             else:
-                return
+                sys.exit()
         else:
             project = projects.tortus_project(
                 name=project_name, groups={}, args=self.options)
         return (project, projects)
 
     def check_delete(self):
-        """Checks if group_names or a file containing group names has been given as an argument"""
-        if not (self.options['group_names'] or self.options['filenames']):
+        """Checks if group_names or a file containing group names has been given as an argument""" #Too many here
+        if not (self.options['group_names'] or self.options['filenames'] or self.options['all'] or self.options['group_prefix']):
             self.parser.error("Must specify group_name in command line or path to file groups to be deleted")
             sys.exit()
 
@@ -108,3 +111,16 @@ class ArgHelper:
             finally:
                 sys.exit()
 
+    def check_users(self):
+        """Check that members to add a link to have been specified through an argument"""
+        elements = ['all', 'project', 'group_names', 'user_names']
+        filtered_options = {k:v for k, v in self.options.items() if (k in elements)}
+        users = [filtered_options[k] for k in filtered_options.keys() if not (filtered_options[k])]
+        if not len(users) < 4: 
+            self.parser.error("Please specify at least one of project, group_names, user_names")
+            sys.exit()
+
+    def check_links(self):
+        if not (self.options['filename'] or self.options['pages']):
+            self.parser.error("Please specify pages or a filename containing pages to link")
+            sys.exit()

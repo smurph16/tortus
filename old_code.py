@@ -351,3 +351,42 @@ def remove_group(self, name):
 							#print "members: " + members 
 						else:
 							self.create_group_page(name, revised_members_text)
+
+def copy(matches):
+	    #You must know the name of the page at this point
+		for page in matches:
+			text = Page(request, pagename).get_raw_body()
+			user_copy = "##User copy"
+			group_copy = "##Group copy"
+			if text.find(user_copy):
+				user_copy(text)
+			elif text.find(group_copy):
+				group_copy(text)
+			else:
+				generic_copy(page_name)
+
+	def process_user_ids(self, page_name, args): #This might be the one to move...back
+		"""Add a link in the users task-bar to a specific page
+		@param page_name: the name of the page to add a quick link to
+		@args: command line arguments"""
+		user_ids = None
+		if args.show_to_all:
+			user_ids = getUserList(self.request)
+		elif args.group_names:
+			user_ids = retrieve_members(args.group_names) #Retrieve members is in groups, need group object
+		if user_ids is not None:
+			for uid in user_ids:
+				add_quick_link(uid, page_name)
+
+	def process_user_ids(self, page_name, args): #This might be the one to move...back
+		"""Add a link in the users task-bar to a specific page
+		@param page_name: the name of the page to add a quick link to
+		@args: command line arguments"""
+		user_ids = None
+		if args.show_to_all:
+			user_ids = getUserList(self.request)
+		elif args.group_names:
+			user_ids = retrieve_members(args.group_names) #Retrieve members is in groups
+		if user_ids is not None:
+			for uid in user_ids:
+				add_quick_link(uid, page_name)

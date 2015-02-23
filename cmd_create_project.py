@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """-------------------------------------------------------
 Command - Create Project
 ------------------------------------------------------------
@@ -14,14 +16,17 @@ import argparse, os
 import sys
 
 class Tortus(TortusScript):
-
+	'''The tortus class provides a common access point for the commands. It controls
+	the program flow from the command line'''
+	
 	def __init__(self):
 
 		self.parser = argparse.ArgumentParser()
 		self.request = ScriptContext()
 		self.parser.add_argument(
-			"--name", 
-			help="the name of the project being created") 
+			"--project", 
+			help="the name of the project being created", 
+			action="store") 
 		self.parser.add_argument(
 			"--permissions", 
 			help="the permissions for the central page")
@@ -31,17 +36,11 @@ class Tortus(TortusScript):
 
 	def run(self):	
 		arghelper = ArgHelper(self.opts, self.parser)
-		if not (self.args.name):
+		if not (self.args.project):
 			self.parser.error ("Please specify a name for the project")
 			sys.exit()
-		project_name = self.args.name
 		permissions = arghelper.get_permissions()
-		projects = TortusProjectCollection()
-		if projects.project_exists(project_name) == 0:
-			print "A project by that name already exists"
-			sys.exit()
-		else:
-			project = projects.tortus_project(name = project_name, groups={}, args=self.args)
+		project, projects = arghelper.get_project(1)
 
 if __name__ == "__main__":
 	command = Tortus()

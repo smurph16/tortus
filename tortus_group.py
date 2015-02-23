@@ -6,8 +6,9 @@ from MoinMoin.Page import Page
 from MoinMoin.PageEditor import PageEditor
 from default import *
 from nat_sort import natsorted
+from MoinMoin import user
 from tortus_page import TortusPage
-import re
+import re, os, shutil
 
 class TortusGroup():
 	"""Tortus Group Class"""
@@ -55,7 +56,7 @@ class TortusGroup():
 					count = int(match_obj.group(1))
 		return count
 
-	def retrieve_members (group_names):
+	def retrieve_members (self, group_names):
 		"""Get the user ids of the members of a list of groups
 		@param group_names: the list of groups"""
 		groups = self.request.groups
@@ -65,11 +66,11 @@ class TortusGroup():
 			group = groups.get(gname)
 			if group is not None:	
 				for member in group:
-					uid = user.getUserId(request, member)
-					if user.User(request, uid).exists():
+					uid = user.getUserId(self.request, member)
+					if user.User(self.request, uid).exists():
 						uIDs.append(uid)
 					else:
-						print ("The user {0} in group {1} does not exist".format(member, group))
+						print ("The user {0} in group {1} does not exist".format(member, group.name))
 			else:
 				print "The group {0} does not exist.".format(gname)
 		return uIDs
@@ -275,15 +276,13 @@ class TortusGroup():
 		#Find the group files....could do this with PageEditor(request, pagename).deletePage()
 		# """Remove a single group from the pages directory
 		# @param name: the name of the group to be removed"""
-		# group_page_path = os.path.join(data_folder, 'pages', name)
-		# if os.path.exists(group_page_path):
-		# 	shutil.rmtree(group_page_path)
-		# 	return 0
-		# else: 
-		# 	return 1 ????implementation choice
-		pg_obj = TortusPage()
-		return pg_obj.delete_page(name)
-
+		group_page_path = os.path.join(data_folder, 'pages', re.sub('/', '(2f)', name))
+		if os.path.exists(group_page_path):
+			shutil.rmtree(group_page_path) #Tortus Page delete option?
+			return 0
+		else: 
+		 	return 1
+		
 	def delete_print_actions(self, deleted_groups, failed_groups):
 		"""Print deleted and failed groups to the command line
 		@param: deleted_groups: list of deleted groups
@@ -300,15 +299,16 @@ class TortusGroup():
 		@param: members: the new members to be stored on the page"""
 		page = Page(self.request, page_name)
 		if page.exists():
-			acl = page.getACL(self.request)
-			text = "{0}{1}\n[[{2}]]".format(acl, members, self.project)
-			try:
-				page_ed = PageEditor(self.request, page_name)
-				page_ed.saveText(text, 0)
-				return 0
-			except page_ed.Unchanged:
-				print "Page not changed"
-				return 1
+			if page.get_meta():
+				acl = page.get_meta()[0][1]
+			text = "#{0}{1}\n[[{2}]]".format(acl, self.format_members(members), self.project)
+			# try
+			page_ed = PageEditor(self.request, page_name)
+			page_ed.saveText(text, 0)
+			return 0
+			# except page_ed.Unchanged:
+			# 	print "Page not changed"
+			# 	return 1
 	
 	def modify_groups(self, groups, project, projects):
 		"""Modify groups from a specific project
@@ -318,7 +318,7 @@ class TortusGroup():
 		modified_groups = {}
 		failed_groups = []
 		for group, members in groups.iteritems():
-			moin_name = self.get_moin_name(group)
+			moin_name = self.get_moin_name(project.name, group)
 			modified = self.modify_page(moin_name, members)
 			if modified == 1:
 				failed_groups.append
@@ -339,10 +339,10 @@ class TortusGroup():
 		for group, members in modified_groups.iteritems():
 			print "Modified group {0} with members {1}".format(group, members)
 
-	def get_moin_name(self, name):
+	def get_moin_name(self, project, name):
 		"""Maps the user's(change this) page name to the MoinMoin page name for page editing
 		@param name: the user's name for the group"""
-		return "{0}Project/{1}Group".format(self.project, name)
+		return "{0}Project/{1}Group".format(project, name)
 
 	def get_user_group_name(self, moin_name):
 		"""Maps the MoinMoin page name to the user's name for the group

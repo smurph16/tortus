@@ -42,9 +42,38 @@ def get_permissions(user_name="",group_name=""):
 	#pages that only instructors or tutors can edit such as instructional pages or lecture notes
 	'read_only': '#acl AdminGroup:read,write,delete,revert,admin EditorGroup:read,write,revert All:read\n',
 	#pages that all can read but only the user it belongs to can write to
-	'user_write_only': '#acl AdminGroup:read,write,delete,revert,admin EditorGroup;read,write,revert {0}:read,write All:read\n'.format(user_name),
+	'user_write_only': '#acl AdminGroup:read,write,delete,revert,admin EditorGroup;read,write,revert {0}:read,write All:\n'.format(user_name),
 	#pages that all can read but only users that belong to the group can write to
 	'group_write_only':'#acl AdminGroup:read,write,delete,revert,admin EditorGroup:read,write,revert {0}:read,write All:read\n'.format(group_name)
 	}
 	return permissions
 
+def get_name(project_name, page_name= "", group_name="", user_name=""):
+	names = {
+	'instructor_project_homepage': '{0}Project'.format(project_name),
+	'instructor_student_homepage': '{0}ProjectHomepage'.format(project_name),	
+	'instructor_group_page': '{0}Project/{1}Group'.format(project_name, group_name),
+	'student_project_homepage':'{0}/{1}ProjectHomepage'.format(user_name,project_name),
+	'student_project_page': '{0}/{1}ProjectHomepage/{2}'.format(user_name, project_name, page_name),
+	'student_group_homepage':'{0}ProjectHomepage/{1}GroupHomepage'.format(project_name, group_name),
+	'student_group_page':'{0}ProjectHomepage/{1}GroupHomepage/{2}'.format(project_name, group_name, page_name),
+	'generic_project_page': '{0}ProjectHomepage/{1}'.format(project_name, page_name)
+	}
+	return names
+
+def get_file_name(project_name, page_name="", group_name="", user_name=""):
+	names = {
+	'instructor_project_homepage': '{0}Project'.format(project_name),
+	'instructor_group_page': '{0}Project(2f){1}Group'.format(project_name, group_name),
+	'student_project_homepage':'{0}(2f){1}ProjectHomepage'.format(user_name,project_name),
+	'student_project_page': '{0}(2f){1}ProjectHomepage(2f){2}'.format(user_name, project_name, page_name),
+	'student_group_homepage':'{0}ProjectHomepage(2f)GroupHomepage'.format(project_name, group_name),
+	'student_group_page':'{0}ProjectHomepage(2f){1}GroupHomepage(2f){2}'.format(project_name, group_name, page_name)
+	}
+	return names
+
+# PHYS1001Project: Homepage for instructors
+# PHYS1001Project/2Group: Group page for instructors....not for students
+# PHYS1001ProjectHomepage: Access for instructors to the homepage for students
+# PHYS1001ProjectHomepage/2GroupHomepage: Group page for students
+# username1234/PHYS1001ProjectHomepage: An individuals project homepage

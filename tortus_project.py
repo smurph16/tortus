@@ -109,7 +109,6 @@ class TortusProjectCollection(dict):
 		dict_copy.pop('args') #Better to write custom json encoder
 		project_dict[project.name].update(dict_copy)
 		return project_dict
-
 		
 	def to_json(self, project):
 		json_file = os.path.exists(os.path.join(project_files, self.name))
@@ -152,14 +151,15 @@ class TortusProject(object): # inherit from Page?
 		#self.pages = Tree() #implement file structure tree here
 		tortus_page_obj = TortusPage()
 		if self.create_project_files():
+			print "here"
 			self.groups = {}
 			p = get_permissions()
 			permissions = p.get('instructor_read_only')
 			tortus_page_obj.add_from_file(
-				os.path.join(template_path, 'instructor_project_homepage'), self, "", 'organisation', permissions)
+				os.path.join(template_path, 'instructor_project_homepage'), self, get_name(self.name).get('instructor_project_homepage'),'organisation', permissions)
 			permissions = p.get('read_only')
 			tortus_page_obj.add_from_file(
-				os.path.join(template_path, 'student_project_homepage'), self, "homepage", 'organisation', permissions)
+				os.path.join(template_path, 'student_project_homepage'), self, get_name(self.name).get('instructor_student_homepage'), 'organisation', permissions)
 		else:
 			pass
 			#self.groups = json_stuff

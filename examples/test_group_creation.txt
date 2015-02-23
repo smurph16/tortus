@@ -20,3 +20,10 @@ riemann231
 mandelbrot2345
 euclid2313
 fermat213
+
+armstrong
+aldrin
+lovell
+haise
+mattingly
+

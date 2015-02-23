@@ -53,9 +53,9 @@ class Tortus(TortusScript):
 			help="the names of the files storing the groups to be deleted", 
 			nargs='*')
 		self.parser.add_argument(
-			"--categorise", 
-			help="if a group should be created containing the new groups", 
-			action="store") #Must edit if exists
+			"--all", 
+			help="remove all groups in a particular project", 
+			action="store_true") #Must edit if exists
 		self.parser.add_argument(
 			"--permissions", 
 			default="instructor_read_only", 
@@ -78,8 +78,9 @@ class Tortus(TortusScript):
 			for grp in self.args.group_names:
 				groups_to_be_deleted.append(grp) #This isn't the name
 		elif self.args.group_prefix:
-			pass
-			#Not yet implemented
+			groups_to_be_deleted.extend([group for group in project.groups.keys() if self.args.group_prefix in group])
+		elif self.args.all:
+			groups_to_be_deleted.extend([group for group in project.groups.keys()])		
 		elif self.args.filenames:
 			for fname in self.args.filenames:
 				if group_obj.process_delete_group_file(fname) is not None:

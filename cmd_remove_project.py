@@ -48,8 +48,6 @@ class Tortus(TortusScript):
 		project, projects = arghelper.get_project() #Shouldn't prompt for creation
 		#self.update_contents(project)
 		matches = traverse_pages(project.name, 1)
-		print matches
-		#print matches
 		groups = find_groups(matches)
 		members = []
 		for groups in groups.values():
@@ -58,7 +56,7 @@ class Tortus(TortusScript):
 		self.remove_project_files(project, projects, matches)
 		self.update_contents(members, project)
 		self.group_obj = TortusGroup(project.name)
-
+			
 		#self.update_contents(project)
 
 	def remove_project_files(self, project, projects, matches):
@@ -67,7 +65,6 @@ class Tortus(TortusScript):
 			with open (json_file, 'r+') as f:
 				try:
 					json_data = json.load(f)
-					print json_data
 					json_data["projects"].pop(project.name)
 					f.seek(0)
 					f.truncate()
@@ -91,7 +88,6 @@ class Tortus(TortusScript):
 			needle = "t:{}".format(name)
 			if search_pages(needle): #Try Except
 				graph, reverse_dict = search_pages(needle)
-				print graph
 				print_toc(graph, reverse_dict)
 				with open ('temp.txt', 'r') as page:
 					text = page.read()

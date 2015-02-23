@@ -1,5 +1,4 @@
 from MoinMoin.web.contexts import ScriptContext
-from MoinMoin.search import searchPages
 request = ScriptContext()
 from MoinMoin.Page import Page
 from MoinMoin import search
@@ -23,13 +22,21 @@ def setInDict(dataDict, mapList, value):
 def search_pages(needle):
 #needle = "t:battabo332 or t:7GroupHomepage"
 	search_result = search.searchPages(request, needle)
+	#print [title.page_name for title in search_result.hits]
 	#Choice here...should every page appear?
 	if search_result.hits: #and request.user.may.read(pagename)
 		graph = {}
 		reverse_dict = {}
 		for title in search_result.hits:
-			print title.page_name
+			# print title.page_name
 			pages = title.page_name.split('/') #Add a conditional here...only want to exclude the first level if it is a user
+			for page in pages:
+				if 'Group' in page:
+					pages.remove(page)
+			if not 'Project' in pages[0]:
+				del pages[0]
+			if not pages:
+				continue
 			if reverse_dict.has_key(pages[-1]):
 				reverse_dict[pages[-1]].append(title.page_name)
 			else:
@@ -74,7 +81,10 @@ def print_toc(graph, reverse_dict):
 			title, children = section, sections[section]
 			#print reverse_dict[title]
 			try:
-				link = reverse_dict[title][0] 
+				if len(reverse_dict[title]) == 1:
+					link = reverse_dict[title][0]
+				else:
+					link = reverse_dict[title][1]
 				#print link#Broken when there is two key values...returns the first one by default
 				with open ('temp.txt', 'a') as page:
 					text = '{}. [[{} | {}]]<<BR>>'.format(path, link.encode('utf-8'), title) 
@@ -100,15 +110,13 @@ def print_toc(graph, reverse_dict):
 
 def create_page(text, page_name):
 	if Page(request, page_name).exists(): #should use isUnderlayPage/isDataPage
-	    print "A page with the name {0} already exists".format(page_name)
+	    #print "A page with the name {0} already exists".format(page_name)
 	    #Do you want to continue
 	    n_text = PageEditor(request, page_name).get_raw_body()
 	    pattern = re.compile('(##Contents)[^----]*(----)', re.M)
 	    match = re.search(pattern, n_text)
 	    if match:
-	    	print "match"
 	    	n_text = re.sub(pattern, "\g<1><<BR>>\n{}<<BR>>\g<2>".format(text), n_text)
-	    	print n_text
 	    else:
 	    	#permissions = Page(request, pagename).getACL(request)
 	    	n_text = text + n_text #This will probably render the permissions a little weirdly
@@ -142,13 +150,17 @@ def traverse_pages(project_name, remove=0):
     matches = []
     if remove == 1:
     	page_pattern = re.compile('.*{0}.*'.format(project_name))
+    	for page in os.walk(os.path.join(data_folder, 'pages')).next()[1]:
+			match = re.search(page_pattern,page)
+			if match:
+				matches.append(match.group())
     else:
-    	page_pattern = re.compile('^{0}.*').format(project_name) #Be careful of this
-    #Find all pages with this 
-    for page in os.walk(os.path.join(data_folder, 'pages')).next()[1]:
-        match = re.search(page_pattern,page) 
-        if match:
-            matches.append(match.group())
+		page_pattern = re.compile('^{0}.*'.format(project_name)) #Improve this
+		for page in os.walk(os.path.join(data_folder, 'pages')).next()[1]:
+			match = re.search(page_pattern,page)
+			if match:
+				if not "Group" in match.group():
+					matches.append(match.group())     
     return matches
 
 

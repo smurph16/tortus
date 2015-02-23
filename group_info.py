@@ -12,7 +12,7 @@ from MoinMoin.web.contexts import ScriptContext
 from MoinMoin import user #Don't think that I need this
 from default import *
 from helper import ArgHelper
-import argparse, os	
+import argparse, os, sys
 
 class Tortus(TortusScript):
 
@@ -31,7 +31,7 @@ class Tortus(TortusScript):
 		self.parser.add_argument(
 			"--group_name", help="the name of the group to determine information about", action="store")
 		self.parser.add_argument(
-			"--member", help="determine which group the member is in", nargs='*', action="store")
+			"--member", help="determine which group the member is in", action="store")
 		self.parser.add_argument(
 			"--list", help="list all groups in a particular project", action="store_true")
 		self.parser.add_argument(
@@ -55,7 +55,9 @@ class Tortus(TortusScript):
 			except KeyError:
 				print "That isn't a valid group name"
 		elif self.args.member:
-			print [group for group in project.groups if self.args.member in group]
+			print project.groups
+			print self.args.member
+			print [group for group in project.groups if self.args.member in project.groups[group]]
 			sys.exit()
 		elif self.args.number:
 			print len(project.groups)

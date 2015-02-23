@@ -59,7 +59,6 @@ class Tortus(TortusScript):
 		json_data = projects.json_create_project_structure()
 		pattern = re.compile('.*Project$')
 		projects = [project for project in os.listdir(os.path.join(data_folder, 'pages')) if re.search(pattern, project)]
-		print projects
 		for project in projects:
 			project_name = re.sub("Project", "", project)
 			matches = traverse_pages(project_name, 1)
@@ -77,7 +76,6 @@ class Tortus(TortusScript):
 			with open (json_file, 'r+') as f:
 				try:
 					json_data = json.load(f)
-					print json_data
 					json_data["projects"].pop(project.name)
 					f.seek(0)
 					f.truncate()
@@ -101,7 +99,6 @@ class Tortus(TortusScript):
 			needle = "t:{}".format(name)
 			if search_pages(needle): #Try Except
 				graph, reverse_dict = search_pages(needle)
-				print graph
 				print_toc(graph, reverse_dict)
 				with open ('temp.txt', 'r') as page:
 					text = page.read()
