@@ -26,10 +26,10 @@ group_regex = u'(?P<all>(?P<key>\\S+)Group)'
 project_regex = '^\w+Project$'
 
 #This is where project files will be produced.
-project_files = '/usr/local/share/moin/projects'
+project_files = '/usr/local/share/moin/tortus/projects'
 
 #This is where the persistent json files are kept
-json_file = "/usr/local/share/moin/persistent/json_project.json"
+json_file = "/usr/local/share/moin//tortus/persistent/json_project.json"
 
 #This is the username regex. It controls an individuals access to pages
 username_regex = '[a-z]{4}[0-9]{4}'

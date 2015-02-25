@@ -70,40 +70,6 @@ class Tortus(TortusScript):
 			f.seek(0)
 			json.dump(json_data, f)
 
-	def remove_project_files(self, project, projects, matches):
-		exists = projects.project_exists(project.name)
-		if exists == 0:
-			with open (json_file, 'r+') as f:
-				try:
-					json_data = json.load(f)
-					json_data["projects"].pop(project.name)
-					f.seek(0)
-					f.truncate()
-  					json.dump(json_data, f)
-					shutil.rmtree(os.path.join(project_files, project.name))
-					page = TortusPage()
-					for match in matches:
-						moin_name = re.sub('\(2f\)', '/', match)
-						page.delete_page(moin_name)
-						try:
-							shutil.rmtree(os.path.join(data_folder, 'pages', match))
-						except OSError:
-							print "The page {} doesn't exist".format(match)
-							pass
-				except KeyError:
-					print "The project does not exist"
-					return None
-		
-	def update_contents(self, members, project):
-		for name in members:
-			needle = "t:{}".format(name)
-			if search_pages(needle): #Try Except
-				graph, reverse_dict = search_pages(needle)
-				print_toc(graph, reverse_dict)
-				with open ('temp.txt', 'r') as page:
-					text = page.read()
-					create_page(text, name)
-
 if __name__ == "__main__":
 	command = Tortus()
 	command.run()

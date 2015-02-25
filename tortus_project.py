@@ -9,6 +9,7 @@ from MoinMoin import user, wikiutil
 from MoinMoin.user import User, getUserList
 from urlparse import urlparse
 import os.path, argparse, re, time, shutil, json
+from search import search_pages, print_toc, create_page
 
 class ProjectDoesNotExistError:
 	"""Raised when project is not found"""
@@ -18,8 +19,7 @@ class TortusProjectCollection(dict):
          super( TortusProjectCollection, self ).__init__( *arg, **kw )
      
 	def tortus_project( self, *arg, **kw ):
-        #Check for json object
-		moin_name = self.get_moin_name(kw['name']) #Not sure I need this line
+		moin_name = self.get_moin_name(kw['name'])
 		name = kw['name']
 		if os.path.getsize(json_file) > 0:
 			with open (json_file, 'r') as f:
@@ -45,7 +45,7 @@ class TortusProjectCollection(dict):
 					json_data = self.json_create_project_structure()
 					json_data["projects"].update(self.json_default(project))
 					json.dump(json_data, f)
-				elif exists == 1: #Just the project itself doesn't exist
+				elif exists == 1: #Only the project itself doesn't exist
 					json_data = json.load(f)
 					json_data["projects"].update(self.json_default(project)) #Do I want to lose the data?
 					f.seek(0)
@@ -57,11 +57,6 @@ class TortusProjectCollection(dict):
 				json_data = self.json_create_project_structure()
 				json_data["projects"].update(self.json_default(project))
 				json.dump(json_data, f)
-				
-	# def _json_dump(self, json_obj, project):
-	# 	project_dict = {project.name: {}}
-	# 	json_obj["projects"].update(self.json_default(project))
-	# 	return json_obj
 			
 	def json_create_project_structure(self):
 		json_data = {"projects":{}} 
@@ -109,11 +104,6 @@ class TortusProjectCollection(dict):
 		dict_copy.pop('args') #Better to write custom json encoder
 		project_dict[project.name].update(dict_copy)
 		return project_dict
-		
-	def to_json(self, project):
-		json_file = os.path.exists(os.path.join(project_files, self.name))
-		with open (os.path.join(project_files), self.name, 'project_json') as f:
-			f.write(json.dumps(project, default=json_default, indent=2))
 
 	def update_groups(self, project, arg):
 		with open (json_file, 'r+') as f:
@@ -232,3 +222,14 @@ class TortusProject(object): # inherit from Page?
 			members |= set(self.groups[group])
 		return members
 
+	def update_contents(self, members):
+		for name in members:
+			groups = ["t:{}ProjectHomepage/{}GroupHomepage".format(self.name, group) for group in self.groups if name in self.groups[group]]
+			group_needle = " or ".join(groups)
+			needle = "t:{} or {}".format(name, group_needle)
+			if search_pages(needle): #Try Except
+				graph, reverse_dict = search_pages(needle)
+				print_toc(graph, reverse_dict)
+				with open ('temp.txt', 'r') as page:
+					text = page.read()
+					create_page(text, name)

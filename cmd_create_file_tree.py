@@ -24,22 +24,6 @@ class Tortus(TortusScript):
 
 		self.parser = argparse.ArgumentParser()
 		self.request = ScriptContext()
-		# self.parser.add_argument(
-		# 	"--page_name", 
-		# 	help="the name of the page being created")
-		self.parser.add_argument(
-			"--quick-link", #?? 
-			help="flag if all users should have this page as a quicklink", 
-			action="store_true")
-		# self.parser.add_argument(
-		# 	"--group_names", 
-		# 	help="the name of the groups to create a quicklink for", 
-		# 	action="store", 
-		# 	nargs="*")
-		# self.parser.add_argument(
-		# 	"--user_names", 
-		# 	help="the name of the users to create a central page for", 
-		# 	nargs="*")
 		self.parser.add_argument(
 			"--permissions", 
 			help="specify the permissions for the page. ", 
@@ -57,7 +41,6 @@ class Tortus(TortusScript):
 	def run(self):
 		arghelper = ArgHelper(self.opts, self.parser)
 		project, projects = arghelper.get_project()
-		#self.update_contents(project)
 		self.group_obj = TortusGroup(project.name)
 		permissions = arghelper.get_permissions()
 		if not self.args.url:
@@ -73,9 +56,9 @@ class Tortus(TortusScript):
 			central_page.add_quick_link
 			if user.User(self.request, uid).exists():
 				uIDs.append(uid)
-		self.update_contents(project)
+		project.update_contents(project.get_members())
 
-	def process_url(self, url, level=0): #Move this
+	def process_url(self, url, level=0):
 		wiki_data = os.path.basename(os.path.dirname(data_folder))
 		url_parts = urlparse(url)
 		page_name = (url_parts[2].rpartition(wiki_data + '/')[2]).rsplit('/')
@@ -84,113 +67,29 @@ class Tortus(TortusScript):
 		moin_link = '/'.join(page_name)
 		if not Page(self.request, moin_link).exists():
 		    print "The url you have provided is not a page that has already been created"
-		    sys.exit() #Could raise an error
+		    sys.exit()
 		else:
 		    return file_name
 
 	def copy(self, matches, project):
-    #You must know the name of the page at this point
+		acls = {}
+		pg = TortusPage()
 		for page in matches:
 			page_name = re.sub('\(2f\)', '/', page)
 			text = Page(self.request, page_name).get_raw_body()
 			user_copy = '##User copy'
 			group_copy = '##Group copy'
 			if text.find(user_copy) != -1:
-				self.user_copy(project, page_name, text)
+				acls.update({(user, get_permissions(user_name=user).get('user_write_only')) for user in project.get_members()})
+				page_name = re.sub('^.*ProjectHomepage/', '', page_name)
+				pg.user_copy(acls, project, page_name, page, 1)
 			elif text.find(group_copy) != -1:
-			    self.group_copy(project, page_name, text)
+				acls.clear()
+				acls.update({(group, get_permissions(group_name=get_name(self.args.project, group_name=group).get('instructor_group_page')).get('group_write_only')) for group in project.groups})
+				page_name = re.sub('^.*ProjectHomepage/', '', page_name)
+				pg.group_copy(acls, project, page_name, page, 1)
 			else:
-				self.generic_copy(project, page_name)  
-
-	def user_copy(self, project, page_name, text):
-		"""Creates a copy of a page for each user in members
-		@param members: a list of members a copy should be made for
-		@param project: the project the page should be created for
-		@param page_name: the name of the page to be copied
-		@param file_path: the path to the page to be copied"""
-		for name in project.get_members():
-		    #uid = user.getUserId(self.request, name)
-		    #account = user.User(self.request, uid)
-		    successful = []
-		    failed = []
-		    p = get_permissions(user_name=name)
-		    permissions = p.get('user_write_only')
-		    print "here"
-		    page_text = permissions
-		    #Page name
-		    pg_name = self.page.get_page_path(name, project.name, page_name)
-		    if Page(self.request, pg_name).exists(): #should use isUnderlayPage/isDataPage
-		        print "A page with the name {0} already exists".format(pg_name)
-		        failed.append(name)
-		        continue #Need name here but doesn't give correct permissions. Could pass them in here?
-		    else:
-		        page_text += text #Should be checking if permissions exist?
-		        PageEditor(self.request, pg_name).saveText(page_text, 0)
-		        print "A page was created with the name {0}".format(pg_name)
-		        successful.append(name)
-
-	def group_copy(self, project, page_name, text):
-	    """Creates a copy of a page for each group in accounts 
-	    @param accounts: a list of groups a copy should be created for
-	    @param project: the project the page should be created for
-	    @param page_name: the name of the page to be copied
-	    @param file_path: the path of the page to be copied"""
-	    successful = []
-	    failed = []
-	    for group in project.groups:
-	    	pg = page_name.split(("{}ProjectHomepage/").format(project.name))[1]
-	    	print pg
-	        pg_name = get_name(project.name, pg, group).get('student_group_page')
-	        p = get_permissions(group_name=self.group_obj.get_moin_name(project.name, group)) #These permissions for Moin are likely to be wrong
-	        permissions = p.get('group_write_only')
-	        page_text = permissions
-	        if Page(self.request, pg_name).exists(): #should use isUnderlayPage/isDataPage
-	            print "A page with the name {0} already exists".format(pg_name)
-	            failed.append(group)
-	        else: 
-	        	try:   
-		            page_text += text #Should be checking if permissions exist?
-		            PageEditor(self.request, pg_name).saveText(page_text, 0)
-		            print "A page was created with the name {0}".format(pg_name)
-		            successful.append(group)
-		        except:
-		            pass
-
-	def generic_copy(self, project, page_name):
-		"""Displays the text on generic pages in an individuals path"""
-		successful = []
-		failed = []
-		p = get_permissions()
-		permissions = p.get('read_only')
-		text = permissions
-		text += "<<Include({0})>>".format(page_name)
-		for name in project.get_members():
-			pg_name = self.page.get_page_path(name, project.name, page_name)
-			if Page(self.request, pg_name).exists(): #should use isUnderlayPage/isDataPage
-				#print "A page with the name {0} already exists".format(pg_name)
-				failed.append(name)
-				 #Need name here but doesn't give correct permissions. Could pass them in here?  
-			else:
-				PageEditor(self.request, pg_name).saveText(text, 0)
-				print "A page was created with the name {0}".format(pg_name)
-				successful.append(name)
-		#print successful
-		#print failed
-	#Current Problems
-	# Effectively doesn't allow links to their own pages...? remove links from generic
-
-	def update_contents(self, project):
-		for name in project.get_members():
-			groups = ["t:{}ProjectHomepage/{}GroupHomepage".format(project.name, group) for group in project.groups if name in project.groups[group]]
-			group_needle = " or ".join(groups)
-			needle = "t:{} or {}".format(name, group_needle)
-			if search_pages(needle): #Try Except
-				graph, reverse_dict = search_pages(needle)
-				print_toc(graph, reverse_dict)
-				with open ('temp.txt', 'r') as page:
-					text = page.read()
-					create_page(text, name)
-
+				pg.generic_copy(project, page_name)  
 
 if __name__ == "__main__":
 	command = Tortus()

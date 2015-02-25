@@ -90,20 +90,6 @@ class TortusGroup():
 			count = self.group_count(re.compile('{0}Project\/{1}([0-9]+)Group'.format(self.project, name)))
 			return '{0}Project/{1}{2}Group'.format(self.project, name, count+1)
 
-	def create_group_of_groups(self, name, members):
-		'''Creates a group page which stores a set of groups for easy handling. A name must be specified for the group.
-		Requires categorise flag and must be passed as a file
-		@param name: the group category name
-		@param members: the groups to be added as members'''
-		gname = "{0}Group".format(name)
-		if not Page(self.request, gname).exists():
-			self.create_group_page(gname, members, 1)
-		else:
-			text = Page(self.request, gname).get_raw_body()
-			text += members
-			PageEditor(self.request, gname).saveText(text, 0)
-			print "Edited group file for {0}".format(name)
-
 	#list comprehension for group file
 	def process_group_file(self, path):
 	# if file path/paths are provided, process each one...use formatter for this
@@ -118,12 +104,9 @@ class TortusGroup():
 		groups = []
 		try:
 			with open(path, 'r+') as fin:
-			#grouped_file = self.process_path(path)
-			#with open(grouped_file, "w") as fout:
 				for line in fin:
 					if not line == "\n":
 						members.append(line.strip())
-						#text += line
 					elif line == "\n":
 						groups.append(members)
 						members = []
@@ -170,25 +153,6 @@ class TortusGroup():
 		except IOError:
 			print "The file could not be found"
 		return groups
-
-	def create_all_groups_version(self, name):
-		"""Create a new version of the all_groups file after removed group
-		@param name: the name of the removed_group""" #Needed when verification of modified file is implemented
-		writing = True
-		count = 0
-		with open(all_groups_path,'r+') as all_groups:
-			with open(os.path.join(os.path.dirname(all_groups_path), 'all_groups_revised.txt'), 'w') as all_groups_revised:	
-				for num, line in enumerate(all_groups):
-					if writing:
-						if line.strip() == name:
-							writing = False
-						else:
-							all_groups_revised.write(line)
-					elif line == "----------------------------------------\n": 
-						count += 1
-						if count == 2:
-							writing = True
-		#Needs to change so that all groups file gets overwritten
 
 	def repr_groups(self, groups):
 		"""Create representation of group name and members to display to user
@@ -274,8 +238,6 @@ class TortusGroup():
 		"""Remove a single group page from the MoinMoin wiki
 		@param name: the MoinMoin page name of the group to be deleted"""
 		#Find the group files....could do this with PageEditor(request, pagename).deletePage()
-		# """Remove a single group from the pages directory
-		# @param name: the name of the group to be removed"""
 		group_page_path = os.path.join(data_folder, 'pages', re.sub('/', '(2f)', name))
 		if os.path.exists(group_page_path):
 			shutil.rmtree(group_page_path) #Tortus Page delete option?
@@ -302,13 +264,13 @@ class TortusGroup():
 			if page.get_meta():
 				acl = page.get_meta()[0][1]
 			text = "#{0}{1}\n[[{2}]]".format(acl, self.format_members(members), self.project)
-			# try
-			page_ed = PageEditor(self.request, page_name)
-			page_ed.saveText(text, 0)
-			return 0
-			# except page_ed.Unchanged:
-			# 	print "Page not changed"
-			# 	return 1
+			try:
+				page_ed = PageEditor(self.request, page_name)
+				page_ed.saveText(text, 0)
+				return 0
+			except page_ed.Unchanged:
+				print "Page not changed"
+				return 1
 	
 	def modify_groups(self, groups, project, projects):
 		"""Modify groups from a specific project
@@ -353,8 +315,3 @@ class TortusGroup():
 			return match.group(1)
 		else:
 			return moin_name
-
-
-# my_group = TortusGroup('pro')
-# groups_dict = my_group.process_modified_group_file('/usr/local/share/moin/tortus/examples/modified_group_file.txt')
-# print groups_dict

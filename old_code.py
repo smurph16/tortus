@@ -390,3 +390,66 @@ def copy(matches):
 		if user_ids is not None:
 			for uid in user_ids:
 				add_quick_link(uid, page_name)
+
+
+		def create_group_of_groups(self, name, members):
+		'''Creates a group page which stores a set of groups for easy handling. A name must be specified for the group.
+		Requires categorise flag and must be passed as a file
+		@param name: the group category name
+		@param members: the groups to be added as members'''
+		gname = "{0}Group".format(name)
+		if not Page(self.request, gname).exists():
+			self.create_group_page(gname, members, 1)
+		else:
+			text = Page(self.request, gname).get_raw_body()
+			text += members
+			PageEditor(self.request, gname).saveText(text, 0)
+			print "Edited group file for {0}".format(name)
+
+		def create_all_groups_version(self, name):
+		"""Create a new version of the all_groups file after removed group
+		@param name: the name of the removed_group""" #Needed when verification of modified file is implemented
+		writing = True
+		count = 0
+		with open(all_groups_path,'r+') as all_groups:
+			with open(os.path.join(os.path.dirname(all_groups_path), 'all_groups_revised.txt'), 'w') as all_groups_revised:	
+				for num, line in enumerate(all_groups):
+					if writing:
+						if line.strip() == name:
+							writing = False
+						else:
+							all_groups_revised.write(line)
+					elif line == "----------------------------------------\n": 
+						count += 1
+						if count == 2:
+							writing = True
+		#Needs to change so that all groups file gets overwritten
+
+		def remove_project_files(self, project, projects, matches):
+		exists = projects.project_exists(project.name)
+		if exists == 0:
+			with open (json_file, 'r+') as f:
+				try:
+					json_data = json.load(f)
+					json_data["projects"].pop(project.name)
+					f.seek(0)
+					f.truncate()
+  					json.dump(json_data, f)
+					shutil.rmtree(os.path.join(project_files, project.name))
+					page = TortusPage()
+					for match in matches:
+						moin_name = re.sub('\(2f\)', '/', match)
+						page.delete_page(moin_name)
+						try:
+							shutil.rmtree(os.path.join(data_folder, 'pages', match))
+						except OSError:
+							print "The page {} doesn't exist".format(match)
+							pass
+				except KeyError:
+					print "The project does not exist"
+					return None
+
+		def to_json(self, project):
+		json_file = os.path.exists(os.path.join(project_files, self.name))
+		with open (os.path.join(project_files), self.name, 'project_json') as f:
+			f.write(json.dumps(project, default=json_default, indent=2))

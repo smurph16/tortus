@@ -121,7 +121,7 @@ def create_page(text, page_name):
 	    	#permissions = Page(request, pagename).getACL(request)
 	    	n_text = text + n_text #This will probably render the permissions a little weirdly
 	    PageEditor(request, page_name).saveText(n_text, 0)
-	    print "A page was created with the name {0}".format(page_name) #Is there already a table of contents there?
+	    print "A page was updated with the name {0}".format(page_name) #Is there already a table of contents there?
 	else:    
 		try: #Should be checking if permissions exist?
 			text = "##Contents\n{}\n----".format(text)
@@ -129,6 +129,7 @@ def create_page(text, page_name):
 			print "A page was created with the name {0}".format(page_name)
 		except:
 			pass
+##Page.Unchanged	
 
 def find_groups(matches):
 		#Look through all the groups in the wiki...and check for pages with Group in them

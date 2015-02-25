@@ -27,15 +27,10 @@ class TortusPage(object): # inherit from Page?
 		if ctx == 'url':
 			#try: 
 			text  = "{0}\n".format(perm)
-			text += Page(self.request, self.get_moin_name(file_path.rsplit('pages/')[1])).get_raw_body()
+			text += Page(self.request, self.get_moin_name(file_path)).get_raw_body()
 			PageEditor(self.request, name).saveText(text, 0)
 			print "A page was created with the name {0}".format(name)
 			return 0
-			# except IOError:
-			# 	print (
-			# 		"A page with that url could not be found " #Should be more useful!!
-			# 		)
-			# 	return 1
 		else:
 			try:
 				with open (file_path) as f:
@@ -50,24 +45,133 @@ class TortusPage(object): # inherit from Page?
 					)
 				return 1
 
-	def process_url_page(self, args):
-		"""Create a quick link for a page created in the browser
-		@param args: command line arguments"""
+	def process_url(self, url, project, permissions, name, acls):
+		'''''Creates the page from a url
+		@param url: the url of the page to be copied
+		@param project: the project to add the page to
+		@param name: the name of the new page
+		@param acls: a dictionary with users or group keys and permission values '''
+		if permissions == 'default':
+			perm = get_permissions().get('read_only') #Read only
+		else: 
+			perm = get_permissions().get(permissions, 'read_only') 
 		wiki_data = os.path.basename(os.path.dirname(data_folder))
-		url_parts = urlparse(args.url)
+		url_parts = urlparse(url)
 		page_name = (url_parts[2].rpartition(wiki_data + '/')[2]).rsplit('/')
-		string = '(2f)' # magic number
-		page_name = string.join(page_name)
-		if not Page(self.request,page_name).exists():
-			print "The url you have provided is not a page that has already been created"
+		file_string = '(2f)'
+		file_name = file_string.join(page_name)
+		file_path = os.path.join(data_folder,'pages',file_name)
+		if acls:
+			self.distribute_page(project, name, file_path, acls)
+		else:
+			self.page.add_from_file(file_path, project, name, 'url', perm)
+		page_link = '/'.join(page_name)
+		if not Page(self.request, page_link).exists():
+		    print "The url you have provided is not a page that has already been created"
+
+	def template(self, template, permissions, project, name, acls = {}):	
+		'''''Creates the page from a template
+		@param template: the name of the page to be copied
+		@param project: the project to add the page to
+		@param name: the name of the new page
+		@param acls: a dictionary with users or group keys and permission values '''
+		if permissions == 'default':
+			perm = get_permissions().get('read_only')
+		else: 
+			perm = get_permissions().get(permissions, 'read_only') 
+		file_path = self.page.get_file_path(template, template=1)
+		if acls:
+			self.distribute_page(project, name, file_path, acls)
+		else:
+			self.page.add_from_file(file_path, project, get_name(project.name, name).get('generic_project_page'), 'user', perm)      
+	
+	def filenames(self, filenames, permissions, project, name="", acls= {}):
+		'''Creates a page from a file
+		@param filenames: the files that the pages should be created from
+		@param project: the project to add the page to
+		@param name: the name of the new page. Default extracts name from filename
+		@param acls: a dictionary containing users or groups and the corresponding permissions'''
+		for fname in filenames:
+			if name is None:
+				name = os.path.splitext(fname)[0]
+			file_path = self.page.get_file_path(fname, file=1)
+			if acls: #Fix this
+				self.distribute_page(project, name, file_path, acls)
+			else:
+				if permissions == 'default':
+					perm = get_permissions("").get('read_only')
+				else: 
+					perm = get_permissions("").get(permissions, 'read_only') 
+				self.page.add_from_file(file_path, project, get_name(project.name, name).get('generic_project_page'), 'user', perm)
+
+	def user_copy(self, acls, project, page_name, file_path, url=0):
+		"""Creates a copy of a page for each user in members
+		@param members: a list of members a copy should be made for
+		@param project: the project the page should be created for
+		@param page_name: the name of the page to be copied
+		@param file_path: the path to the page to be copied"""
+		if acls:
+			for member in acls:
+				perm = acls.get(member)
+				pg_name = get_name(project.name, page_name, user_name=member).get('student_project_page')
+				if url == 1:
+					self.add_from_file(file_path, project, pg_name, 'url', perm)
+				else:
+					self.add_from_file(file_path, project, pg_name, 'file', perm)
+#successful 
+#failed
+
+	def group_copy(self, acls, project, page_name, file_path, url=0):
+		"""Creates a copy of a page for each group in accounts 
+		@param accounts: a list of groups a copy should be created for
+		@param project: the project the page should be created for
+		@param page_name: the name of the page to be copied
+		@param file_path: the path of the page to be copied"""
+		for group in acls:
+			perm = acls.get(group)
+			pg_name = get_name(project.name, page_name, group_name=group).get('student_group_page')
+			if url == 1:
+				self.add_from_file(file_path, project, pg_name, 'url', perm)
+			else:
+				self.add_from_file(file_path, project, pg_name, 'file', perm)
+
+	def generic_copy(self, project, page_name):
+		"""Displays the text on generic pages in an individuals path"""
+		successful = []
+		failed = []
+		p = get_permissions()
+		permissions = p.get('read_only')
+		text = permissions
+		text += "<<Include({0})>>".format(page_name)
+		for name in project.get_members():
+			pg_name = self.get_page_path(name, project.name, page_name)
+			if Page(self.request, pg_name).exists():
+				failed.append(name) 
+			else:
+				PageEditor(self.request, pg_name).saveText(text, 0)
+				print "A page was created with the name {0}".format(pg_name)
+				successful.append(name)
+
+	def distribute_page(self, project, page_name, file_path, acls, homepage=0):
+		# Checks for a template page and sets homepage_default_text
+		"""Creates a copy of a page for each user or group
+		@param project: the project the page and users belong to
+		@param page_name: the name of the page that will be added for each user
+		@param file_path: the path to the file or template containing the contents of the page
+		@param homepage: set to 1 if the page will be the homepage for a user"""
+		if self.args.user_names or self.args.show_to_all:
+			self.user_copy(acls, project, page_name, file_path, homepage)
+		elif self.args.group_names:
+			for group in self.args.group_names:
+				group_name = get_name(project.name, page_name, group_name=group).get('student_group_page')
+				temp_group = self.request.groups.get(get_name(project.name, page_name, group_name=group).get('instructor_group_page'))
+				if (temp_group and temp_group.member_groups):
+					acls.extend({(group, get_permissions(group_name=temp_group.name).get('group_write_only')) for group in temp_group.member_groups})
+					acls.pop(group)
+			self.group_copy(acls, project, page_name, file_path)
+		if not acls:
+			print "No accounts selected for copy of page!"
 			return
-		permissions = get_permissions()
-		text = "{0}\n".format(permissions.get(args.permissions, 'read_only'))
-		#print "this is it" + text 
-		text += Page(self.request, page_name).get_raw_body()
-		print text
-		print PageEditor(self.request, page_name).saveText(text, 0)
-		process_user_link(page_name, args)
 
 	def get_file_path(self, name, file=0, template=0):
 		"""Retrieve the file from the pages_directory
@@ -100,9 +204,6 @@ class TortusPage(object): # inherit from Page?
 			u.removeQuickLink(page_name)
 
 	def delete_page(self, name):
-		#Delete from project file
-		#Delete from MoinMoin record
-		#Delete from json project file
 		if not Page(self.request, name).exists(): #should use isUnderlayPage/isDataPage
 			print "A page with the name {0} doesn't exist".format(name)
 			return 1
@@ -133,4 +234,26 @@ class TortusPage(object): # inherit from Page?
 	def get_moin_name(self, name):
 		return re.sub('\(2f\)', '/', name)
 
+	def process_user_ids(self, project, args):
+		"""Add a link in the users task-bar to a specific page
+		@param page_name: the name of the page to add a quick link to
+		@args: command line arguments"""
+		user_ids = None
+		if args.all:
+			user_ids = user.getUserList(self.request)
+		elif args.group_names:
+			group_names = [TortusGroup(project).get_moin_name(group) for group in args.group_names]
+			user_ids = self.group_obj.retrieve_members(group_names) #Retrieve members is in groups
+		elif args.user_names:
+			user_ids =[user.getUserId(self.request, member) for member in args.user_names] 
+		elif args.project:
+			user_ids = [user.getUserId(self.request, member) for member in project.get_members()]
+		return user_ids
+
+	def add_link(self, user_ids, pages, project):
+		for uid in user_ids:
+			if user.User(self.request, uid).exists():
+				for page in pages:
+					page = self.page_name(page, project)
+					self.add_quick_link(uid, page)
 

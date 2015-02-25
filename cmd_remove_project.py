@@ -45,8 +45,7 @@ class Tortus(TortusScript):
 
 	def run(self):
 		arghelper = ArgHelper(self.opts, self.parser)
-		project, projects = arghelper.get_project() #Shouldn't prompt for creation
-		#self.update_contents(project)
+		project, projects = arghelper.get_project()
 		matches = traverse_pages(project.name, 1)
 		groups = find_groups(matches)
 		members = []
@@ -54,10 +53,9 @@ class Tortus(TortusScript):
 			members.extend(groups)
 		members = set(members) # update contents for these people
 		self.remove_project_files(project, projects, matches)
-		self.update_contents(members, project)
+		project.update_contents(members)
 		self.group_obj = TortusGroup(project.name)
 			
-		#self.update_contents(project)
 
 	def remove_project_files(self, project, projects, matches):
 		exists = projects.project_exists(project.name)
@@ -82,16 +80,6 @@ class Tortus(TortusScript):
 				except KeyError:
 					print "The project does not exist"
 					return None
-		
-	def update_contents(self, members, project):
-		for name in members:
-			needle = "t:{}".format(name)
-			if search_pages(needle): #Try Except
-				graph, reverse_dict = search_pages(needle)
-				print_toc(graph, reverse_dict)
-				with open ('temp.txt', 'r') as page:
-					text = page.read()
-					create_page(text, name)
 
 if __name__ == "__main__":
 	command = Tortus()
