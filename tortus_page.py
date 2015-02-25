@@ -61,10 +61,12 @@ class TortusPage(object): # inherit from Page?
 		file_string = '(2f)'
 		file_name = file_string.join(page_name)
 		file_path = os.path.join(data_folder,'pages',file_name)
-		if acls:
-			self.distribute_page(project, name, file_path, acls)
+		if user_acls:
+			self.user_copy(user_acls, project, name, file_path, 1)
+		elif group_acls:
+			self.group_copy(group_acls, project, name, file_path, 1)
 		else:
-			self.page.add_from_file(file_path, project, name, 'url', perm)
+			self.add_from_file(file_path, project, name, 'url', perm)
 		page_link = '/'.join(page_name)
 		if not Page(self.request, page_link).exists():
 		    print "The url you have provided is not a page that has already been created"
@@ -79,13 +81,15 @@ class TortusPage(object): # inherit from Page?
 			perm = get_permissions().get('read_only')
 		else: 
 			perm = get_permissions().get(permissions, 'read_only') 
-		file_path = self.page.get_file_path(template, template=1)
-		if acls:
-			self.distribute_page(project, name, file_path, acls)
+		file_path = self.get_file_path(template, template=1)
+		if user_acls:
+			self.user_copy(user_acls, project, name, file_path)
+		elif group_acls:
+			self.group_copy(group_acls, project, name, file_path)
 		else:
-			self.page.add_from_file(file_path, project, get_name(project.name, name).get('generic_project_page'), 'user', perm)      
+			self.add_from_file(file_path, project, get_name(project.name, name).get('generic_project_page'), 'user', perm)      
 	
-	def filenames(self, filenames, permissions, project, name="", acls= {}):
+	def filenames(self, filenames, permissions, project, name="", user_acls= {}, group_acls={}):
 		'''Creates a page from a file
 		@param filenames: the files that the pages should be created from
 		@param project: the project to add the page to
@@ -94,15 +98,17 @@ class TortusPage(object): # inherit from Page?
 		for fname in filenames:
 			if name is None:
 				name = os.path.splitext(fname)[0]
-			file_path = self.page.get_file_path(fname, file=1)
-			if acls: #Fix this
-				self.distribute_page(project, name, file_path, acls)
+			file_path = self.get_file_path(fname, file=1)
+			if user_acls:
+				self.user_copy(user_acls, project, name, file_path)
+			elif group_acls:
+				self.group_copy(group_acls, project, name, file_path)
 			else:
 				if permissions == 'default':
 					perm = get_permissions("").get('read_only')
 				else: 
 					perm = get_permissions("").get(permissions, 'read_only') 
-				self.page.add_from_file(file_path, project, get_name(project.name, name).get('generic_project_page'), 'user', perm)
+				self.add_from_file(file_path, project, get_name(project.name, name).get('generic_project_page'), 'user', perm)
 
 	def user_copy(self, acls, project, page_name, file_path, url=0):
 		"""Creates a copy of a page for each user in members
@@ -120,7 +126,6 @@ class TortusPage(object): # inherit from Page?
 					self.add_from_file(file_path, project, pg_name, 'file', perm)
 #successful 
 #failed
-
 	def group_copy(self, acls, project, page_name, file_path, url=0):
 		"""Creates a copy of a page for each group in accounts 
 		@param accounts: a list of groups a copy should be created for
@@ -151,27 +156,6 @@ class TortusPage(object): # inherit from Page?
 				PageEditor(self.request, pg_name).saveText(text, 0)
 				print "A page was created with the name {0}".format(pg_name)
 				successful.append(name)
-
-	def distribute_page(self, project, page_name, file_path, acls, homepage=0):
-		# Checks for a template page and sets homepage_default_text
-		"""Creates a copy of a page for each user or group
-		@param project: the project the page and users belong to
-		@param page_name: the name of the page that will be added for each user
-		@param file_path: the path to the file or template containing the contents of the page
-		@param homepage: set to 1 if the page will be the homepage for a user"""
-		if self.args.user_names or self.args.show_to_all:
-			self.user_copy(acls, project, page_name, file_path, homepage)
-		elif self.args.group_names:
-			for group in self.args.group_names:
-				group_name = get_name(project.name, page_name, group_name=group).get('student_group_page')
-				temp_group = self.request.groups.get(get_name(project.name, page_name, group_name=group).get('instructor_group_page'))
-				if (temp_group and temp_group.member_groups):
-					acls.extend({(group, get_permissions(group_name=temp_group.name).get('group_write_only')) for group in temp_group.member_groups})
-					acls.pop(group)
-			self.group_copy(acls, project, page_name, file_path)
-		if not acls:
-			print "No accounts selected for copy of page!"
-			return
 
 	def get_file_path(self, name, file=0, template=0):
 		"""Retrieve the file from the pages_directory

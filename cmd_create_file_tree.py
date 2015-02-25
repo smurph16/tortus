@@ -72,7 +72,8 @@ class Tortus(TortusScript):
 		    return file_name
 
 	def copy(self, matches, project):
-		acls = {}
+		user_acls = {}
+		group_acls = {}
 		pg = TortusPage()
 		for page in matches:
 			page_name = re.sub('\(2f\)', '/', page)
@@ -80,14 +81,14 @@ class Tortus(TortusScript):
 			user_copy = '##User copy'
 			group_copy = '##Group copy'
 			if text.find(user_copy) != -1:
-				acls.update({(user, get_permissions(user_name=user).get('user_write_only')) for user in project.get_members()})
+				user_acls.update({(user, get_permissions(user_name=user).get('user_write_only')) for user in project.get_members()})
 				page_name = re.sub('^.*ProjectHomepage/', '', page_name)
-				pg.user_copy(acls, project, page_name, page, 1)
+				pg.user_copy(user_acls, project, page_name, page, 1)
 			elif text.find(group_copy) != -1:
-				acls.clear()
-				acls.update({(group, get_permissions(group_name=get_name(self.args.project, group_name=group).get('instructor_group_page')).get('group_write_only')) for group in project.groups})
+				group_acls.clear()
+				group_acls.update({(group, get_permissions(group_name=get_name(self.args.project, group_name=group).get('instructor_group_page')).get('group_write_only')) for group in project.groups})
 				page_name = re.sub('^.*ProjectHomepage/', '', page_name)
-				pg.group_copy(acls, project, page_name, page, 1)
+				pg.group_copy(group_acls, project, page_name, page, 1)
 			else:
 				pg.generic_copy(project, page_name)  
 
