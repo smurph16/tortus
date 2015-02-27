@@ -1,0 +1,10 @@
+Each student should have their own copy of this file to edit and submit work.
+
+Week 2 Homework
+
+Complete the following questions before 11:59pm Friday 12th March
+
+ 1. Outline the difference between centripetal acceleration and centrifugal force
+ 2. Explain in terms of static and kinetic energy why it is desirable to prevent the wheels from locking when the brakes are applied on an icy surface
+ 3. Why does a hammer make driving a nail into a piece of wood easier than pushing it in with one's hands
+ 4. Derive an equation for centripetal acceleration in polar co-ordinates 

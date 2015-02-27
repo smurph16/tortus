@@ -11,10 +11,10 @@ all_groups_path = '/usr/local/share/moin/tortus/all_groups.txt'
 data_folder = '/usr/local/share/moin/eduwiki/data'
 
 #This is where pages created by the instructor are stored. This is not where pages are stored for the actual wiki
-page_path = '/usr/local/share/moin/tortus/pages'
+page_path = '/usr/local/share/moin/tortus/tortus/pages'
 
 #This is where templates for easy page creation are stored. 
-template_path = '/usr/local/share/moin/tortus/pages/templates'
+template_path = '/usr/local/share/moin/tortus/tortus/pages/templates'
 
 #This is where the wiki config file is located
 wiki_config = '/usr/local/share/moin/wikiconfig.py'
@@ -29,7 +29,7 @@ project_regex = '^\w+Project$'
 project_files = '/usr/local/share/moin/tortus/projects'
 
 #This is where the persistent json files are kept
-json_file = "/usr/local/share/moin//tortus/persistent/json_project.json"
+json_file = "/usr/local/share/moin/tortus/tortus/persistent/json_project.json"
 
 #This is the username regex. It controls an individuals access to pages
 username_regex = '[a-z]{4}[0-9]{4}'

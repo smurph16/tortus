@@ -1,0 +1,62 @@
+Creating Projects and Groups
+
+1. python cmd_create_project.py –project PHYS1001
+
+2. nano examples/PHYS1001Groups.txt
+
+3. python cmd_create_group.py
+
+4. python cmd_create_group.py –project PHYS1001 –group_name PHYS examples/PHYS1001Grousp2.txt
+
+5. python cmd_create_group.py –project PHYS1001 –group_name Admin
+--member_names smax1102 smur1032 ghai7212
+
+6. bash change_owner.txt
+
+Modifying Projects and Groups
+
+1. python cmd_modify_group.py –project  –get_file
+
+2. E.g. python cmd_modify_group.py –project ELEC2602 –filename ELEC2602_groups.txt
+
+Deleting Projects and Groups
+
+1. python cmd_remove_group.py –project PHYS1001 –group_names PHYS2 3
+
+2. python group_info -h
+
+3. python group_info –project PHYS1001 –list
+
+4. python cmd_remove_group.py –project PHYS1001 –group_prefix PHYS
+
+5. python group_info –project PHYS1001 –list
+
+6. bash change_owner.sh ==> Go to website
+
+7. python cmd_remove_project.py –project PHYS1001
+
+8. bash change_owner.sh ==> Go to website
+
+Creating Pages
+
+1. Nano pages/templates/homework_template
+
+2. python cmd_create_page.py –template homework_template –project INFO1001 –page_name Homework1
+
+3. bash change_owner.sh
+
+4. nano pages/TutorContact.txt
+
+5. python cmd_create_page.py –project INFO1001 TutorContact.txt
+
+6. python cmd_create_page.py –project INFO1001 –user_names abri2342 slem1648 ghai 9032 –page_name HW3 Homework2.txt
+
+7. python cmd_create_page.py –project INFO1001 –group_names 3 4 5 –page_name HW Homework2.txt
+
+8. bash change_owner.sh
+
+File Trees
+
+1. Show the file tree on the MoinMoin wiki
+
+2. python cmd_create_file_tree.py –project INFO1001 –url http://localhost/eduwiki/INFO1001Proje ctHomepage
